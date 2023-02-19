@@ -22,34 +22,6 @@
 	return self;
 }
 
-/*
--(void) increaseConnectedIndexCounts:(TTriangle*)InTriangle
-{
-	if( InTriangle->ownerFace->index == FI_Dead )
-	{
-		return;
-	}
-	
-	int f;
-	
-	for( f = 0 ; f < 3 ; ++f )
-	{
-		if( InTriangle->connectedFaces[f] != nil && InTriangle->connectedFaces[f]->index == FI_Unused )
-		{
-			InTriangle->connectedFaces[f]->index = InTriangle->ownerFace->index + 1;
-		}
-	}
-
-	for( f = 0 ; f < 3 ; ++f )
-	{
-		if( InTriangle->connectedFaces[f] != nil && InTriangle->connectedFaces[f]->index == InTriangle->ownerFace->index + 1 )
-		{
-			[self increaseConnectedIndexCounts:InTriangle->connectedFaces[f]->ownerTriangle];
-		}
-	}
-}
-*/
-
 // Returns a string that represents this entity in Quake MAP text format.  This is the
 // same text that would be read or written to a MAP file.
 

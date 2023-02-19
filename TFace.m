@@ -476,6 +476,16 @@
 
 -(TFace*) flip
 {
+	[self reverseVerts];
+	
+	[self finalizeInternals];
+	
+	// Return self as a convenience to the caller. The flip happens in place.
+	return self;
+}
+
+-(TFace*) reverseVerts
+{
 	NSMutableArray* newVerts = [NSMutableArray new];
 	
 	NSEnumerator *enumerator = [verts reverseObjectEnumerator];
@@ -487,7 +497,6 @@
 	}
 	
 	verts = newVerts;
-	[self finalizeInternals];
 	
 	// Return self as a convenience to the caller. The flip happens in place.
 	return self;
@@ -549,5 +558,65 @@
 {
 	return [[TPlane alloc] initFromTriangleA:[verts objectAtIndex:0] B:[verts objectAtIndex:1] C:[verts objectAtIndex:2]];
 }
+
+-(int) getVertIdx:(TVec3D*)InV
+{
+	int idx = 0;
+	
+	for( TVec3D* V in verts )
+	{
+		if( [V isAlmostEqualTo:InV] )
+		{
+			return idx;
+		}
+		
+		idx++;
+	}
+	
+	return -1;
+}
+
+// Determines if this face contains an edge that matches the 2 verts in InFullEdge
+
+-(BOOL) containsFullEdge:(TEdgeFull*)InFullEdge
+{
+	for( TEdge* E in edges )
+	{
+		TVec3D* edgeV0 = [verts objectAtIndex:E->verts[0]];
+		TVec3D* edgeV1 = [verts objectAtIndex:E->verts[1]];
+		
+		TVec3D* fullEdgeV0 = InFullEdge->verts[0];
+		TVec3D* fullEdgeV1 = InFullEdge->verts[1];
+		
+		if( ([fullEdgeV0 isAlmostEqualTo:edgeV0] && [fullEdgeV1 isAlmostEqualTo:edgeV1]) || ([fullEdgeV0 isAlmostEqualTo:edgeV1] && [fullEdgeV1 isAlmostEqualTo:edgeV0]) )
+		{
+			return YES;
+		}
+	}
+	
+	return NO;
+}
+
+-(void) markDirtyRenderArray
+{
+	[[TGlobal getMAP] findTextureByName:textureName]->bDirtyRenderArray = YES;
+}
+
+// Properties
+
+-(void) setTextureName:(NSString*)InTextureName
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	
+	if( map )
+	{
+		[map findTextureByName:textureName]->bDirtyRenderArray = YES;
+		[map findTextureByName:InTextureName]->bDirtyRenderArray = YES;
+	}
+	
+	textureName = [InTextureName copy];
+}
+
+@synthesize textureName;
 
 @end

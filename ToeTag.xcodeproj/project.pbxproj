@@ -17,7 +17,7 @@
 		8313EBF90D232095005959BD /* Light in Resources */ = {isa = PBXBuildFile; fileRef = 8313EBF70D232095005959BD /* Light */; };
 		8313EBFA0D232095005959BD /* Vis in Resources */ = {isa = PBXBuildFile; fileRef = 8313EBF80D232095005959BD /* Vis */; };
 		8313EC070D232154005959BD /* TPreferencesPanelDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8313EC050D232154005959BD /* TPreferencesPanelDelegate.m */; };
-		8313EC8C0D23BBFB005959BD /* TBuildInspectorDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8313EC8A0D23BBFB005959BD /* TBuildInspectorDelegate.m */; };
+		8313EC8C0D23BBFB005959BD /* TDlgRenameDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 8313EC8A0D23BBFB005959BD /* TDlgRenameDelegate.m */; };
 		831528350D2045CF00C72057 /* TBrushBuilderCylinder.m in Sources */ = {isa = PBXBuildFile; fileRef = 831528340D2045CF00C72057 /* TBrushBuilderCylinder.m */; };
 		831528AB0D205DE400C72057 /* TBrushBuilderSpike.m in Sources */ = {isa = PBXBuildFile; fileRef = 831528A90D205DE400C72057 /* TBrushBuilderSpike.m */; };
 		8318E1B60D2A634E0052FF20 /* TBrush.m in Sources */ = {isa = PBXBuildFile; fileRef = 8318E1B50D2A634E0052FF20 /* TBrush.m */; };
@@ -61,6 +61,7 @@
 		835421D00CEFAEFD002996F8 /* BLargeRockets.MAP in Resources */ = {isa = PBXBuildFile; fileRef = 835421BA0CEFAEFD002996F8 /* BLargeRockets.MAP */; };
 		835421D10CEFAEFD002996F8 /* BSmallShells.MAP in Resources */ = {isa = PBXBuildFile; fileRef = 835421BB0CEFAEFD002996F8 /* BSmallShells.MAP */; };
 		8355CBD60CF49284008BA0CD /* TSelection.m in Sources */ = {isa = PBXBuildFile; fileRef = 8355CBD50CF49284008BA0CD /* TSelection.m */; };
+		836101B00E83B7330020CC24 /* TBuildInspectorDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 836101AF0E83B7330020CC24 /* TBuildInspectorDelegate.m */; };
 		83740C4D0D436A0A007F76F3 /* Flag.png in Resources */ = {isa = PBXBuildFile; fileRef = 83740C4A0D436A0A007F76F3 /* Flag.png */; };
 		83740C4E0D436A0A007F76F3 /* Flag_1.png in Resources */ = {isa = PBXBuildFile; fileRef = 83740C4B0D436A0A007F76F3 /* Flag_1.png */; };
 		83740C4F0D436A0A007F76F3 /* Flag_3.png in Resources */ = {isa = PBXBuildFile; fileRef = 83740C4C0D436A0A007F76F3 /* Flag_3.png */; };
@@ -70,6 +71,7 @@
 		839997690DD1B45600E74609 /* TSTLReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 839997680DD1B45600E74609 /* TSTLReader.m */; };
 		839D535A0D0578E300C1DBE1 /* DownArrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 839D53580D0578E300C1DBE1 /* DownArrow.png */; };
 		839D535B0D0578E300C1DBE1 /* UpArrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 839D53590D0578E300C1DBE1 /* UpArrow.png */; };
+		83A310410E45C2EE001DB45B /* TEdgeFull.m in Sources */ = {isa = PBXBuildFile; fileRef = 83A310400E45C2EE001DB45B /* TEdgeFull.m */; };
 		83A3AEC90CD7C308002BA694 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 83A3AEC80CD7C308002BA694 /* OpenGL.framework */; };
 		83A3AF590CD7DB7F002BA694 /* TTextureBrowserView.m in Sources */ = {isa = PBXBuildFile; fileRef = 83A3AF580CD7DB7F002BA694 /* TTextureBrowserView.m */; };
 		83A3AF880CD7DD87002BA694 /* TLevelView.m in Sources */ = {isa = PBXBuildFile; fileRef = 83A3AF840CD7DD87002BA694 /* TLevelView.m */; };
@@ -165,8 +167,7 @@
 		8313EBF80D232095005959BD /* Vis */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = Vis; path = ../Quake/Tools/bin/Vis; sourceTree = SOURCE_ROOT; };
 		8313EC050D232154005959BD /* TPreferencesPanelDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TPreferencesPanelDelegate.m; sourceTree = "<group>"; };
 		8313EC060D232154005959BD /* TPreferencesPanelDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TPreferencesPanelDelegate.h; sourceTree = "<group>"; };
-		8313EC8A0D23BBFB005959BD /* TBuildInspectorDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TBuildInspectorDelegate.m; sourceTree = "<group>"; };
-		8313EC8B0D23BBFB005959BD /* TBuildInspectorDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TBuildInspectorDelegate.h; sourceTree = "<group>"; };
+		8313EC8A0D23BBFB005959BD /* TDlgRenameDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TDlgRenameDelegate.m; sourceTree = "<group>"; };
 		831528330D2045CF00C72057 /* TBrushBuilderCylinder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TBrushBuilderCylinder.h; sourceTree = "<group>"; };
 		831528340D2045CF00C72057 /* TBrushBuilderCylinder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TBrushBuilderCylinder.m; sourceTree = "<group>"; };
 		831528A90D205DE400C72057 /* TBrushBuilderSpike.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TBrushBuilderSpike.m; sourceTree = "<group>"; };
@@ -234,6 +235,8 @@
 		835421BB0CEFAEFD002996F8 /* BSmallShells.MAP */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = BSmallShells.MAP; sourceTree = "<group>"; };
 		8355CBD40CF49284008BA0CD /* TSelection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSelection.h; sourceTree = "<group>"; };
 		8355CBD50CF49284008BA0CD /* TSelection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TSelection.m; sourceTree = "<group>"; };
+		836101AF0E83B7330020CC24 /* TBuildInspectorDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TBuildInspectorDelegate.m; sourceTree = "<group>"; };
+		836101C20E83B74A0020CC24 /* TDlgRenameDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TDlgRenameDelegate.h; sourceTree = "<group>"; };
 		83740C4A0D436A0A007F76F3 /* Flag.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Flag.png; sourceTree = "<group>"; };
 		83740C4B0D436A0A007F76F3 /* Flag_1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Flag_1.png; sourceTree = "<group>"; };
 		83740C4C0D436A0A007F76F3 /* Flag_3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Flag_3.png; sourceTree = "<group>"; };
@@ -247,6 +250,8 @@
 		8399976A0DD1B46100E74609 /* TSTLReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TSTLReader.h; sourceTree = "<group>"; };
 		839D53580D0578E300C1DBE1 /* DownArrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = DownArrow.png; sourceTree = "<group>"; };
 		839D53590D0578E300C1DBE1 /* UpArrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = UpArrow.png; sourceTree = "<group>"; };
+		83A310400E45C2EE001DB45B /* TEdgeFull.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TEdgeFull.m; sourceTree = "<group>"; };
+		83A310420E45C2F8001DB45B /* TEdgeFull.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TEdgeFull.h; sourceTree = "<group>"; };
 		83A3AEC80CD7C308002BA694 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
 		83A3AF570CD7DB7F002BA694 /* TTextureBrowserView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TTextureBrowserView.h; sourceTree = "<group>"; };
 		83A3AF580CD7DB7F002BA694 /* TTextureBrowserView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TTextureBrowserView.m; sourceTree = "<group>"; };
@@ -433,6 +438,8 @@
 		8305B7530D573ACC00364348 /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				836101C20E83B74A0020CC24 /* TDlgRenameDelegate.h */,
+				83A310420E45C2F8001DB45B /* TEdgeFull.h */,
 				83968E930DE6D85500C87933 /* TOBJReader.h */,
 				8399976A0DD1B46100E74609 /* TSTLReader.h */,
 				8399974A0DD077CA00E74609 /* TTriangleMesh.h */,
@@ -479,7 +486,6 @@
 				832CD6870CD7EE7B003849D6 /* TProjComponent.h */,
 				832CD6850CD7EE7B003849D6 /* TOrthoProjComponent.h */,
 				83CA92440CDA418400490DD3 /* TTextureBrowserProjComponent.h */,
-				8313EC8B0D23BBFB005959BD /* TBuildInspectorDelegate.h */,
 				8313EC060D232154005959BD /* TPreferencesPanelDelegate.h */,
 				83B4728F0CDC94C700A8F7BA /* TApplicationDelegate.h */,
 				8324929C0D02D5DB005C1AD3 /* TEntityInspectorDelegate.h */,
@@ -595,6 +601,7 @@
 				8318E1BD0D2A63A30052FF20 /* TPlane.m */,
 				8318E1BF0D2A63A30052FF20 /* TVec3D.m */,
 				83F194700D38E2DC005F0830 /* TEdge.m */,
+				83A310400E45C2EE001DB45B /* TEdgeFull.m */,
 				8318E1B70D2A63610052FF20 /* TFace.m */,
 				83B471C00CDC7C9400A8F7BA /* TEntity.m */,
 				8318E1B50D2A634E0052FF20 /* TBrush.m */,
@@ -724,11 +731,12 @@
 		83F362430D24728D0088E2AB /* Delegates */ = {
 			isa = PBXGroup;
 			children = (
-				8313EC8A0D23BBFB005959BD /* TBuildInspectorDelegate.m */,
+				836101AF0E83B7330020CC24 /* TBuildInspectorDelegate.m */,
 				8313EC050D232154005959BD /* TPreferencesPanelDelegate.m */,
 				83B472900CDC94C700A8F7BA /* TApplicationDelegate.m */,
 				8324929D0D02D5DB005C1AD3 /* TEntityInspectorDelegate.m */,
 				83316F4E0CFF8D14001CBF2E /* TFaceInspectorDelegate.m */,
+				8313EC8A0D23BBFB005959BD /* TDlgRenameDelegate.m */,
 			);
 			name = Delegates;
 			sourceTree = "<group>";
@@ -878,7 +886,7 @@
 				831528350D2045CF00C72057 /* TBrushBuilderCylinder.m in Sources */,
 				831528AB0D205DE400C72057 /* TBrushBuilderSpike.m in Sources */,
 				8313EC070D232154005959BD /* TPreferencesPanelDelegate.m in Sources */,
-				8313EC8C0D23BBFB005959BD /* TBuildInspectorDelegate.m in Sources */,
+				8313EC8C0D23BBFB005959BD /* TDlgRenameDelegate.m in Sources */,
 				8318E1B60D2A634E0052FF20 /* TBrush.m in Sources */,
 				8318E1B90D2A63610052FF20 /* TFace.m in Sources */,
 				8318E1C00D2A63A30052FF20 /* TMatrix.m in Sources */,
@@ -898,6 +906,8 @@
 				839997430DD077BE00E74609 /* TTriangleMesh.m in Sources */,
 				839997690DD1B45600E74609 /* TSTLReader.m in Sources */,
 				83968E870DE6D83A00C87933 /* TOBJReader.m in Sources */,
+				83A310410E45C2EE001DB45B /* TEdgeFull.m in Sources */,
+				836101B00E83B7330020CC24 /* TBuildInspectorDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -967,7 +977,7 @@
 				GCC_DEBUGGING_SYMBOLS = full;
 				GCC_ENABLE_OBJC_GC = required;
 				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ToeTag_Prefix.pch;
 				GENERATE_PROFILING_CODE = YES;
@@ -1018,12 +1028,17 @@
 					"\"$(SRCROOT)/../../Sparkle/Extras/Source/build/Release\"",
 				);
 				GCC_AUTO_VECTORIZATION = YES;
+				GCC_DYNAMIC_NO_PIC = YES;
 				GCC_ENABLE_OBJC_GC = required;
+				GCC_ENABLE_SSE3_EXTENSIONS = YES;
+				GCC_ENABLE_SUPPLEMENTAL_SSE3_INSTRUCTIONS = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = ToeTag_Prefix.pch;
+				GCC_STRICT_ALIASING = YES;
+				GCC_THREADSAFE_STATICS = YES;
 				GCC_UNROLL_LOOPS = YES;
 				GENERATE_PROFILING_CODE = NO;
 				INFOPLIST_FILE = Info.plist;

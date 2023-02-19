@@ -67,35 +67,79 @@
 		NSNumber* closestSelectName = [NSNumber new];
 		float closestZ = 1.0f;
 		
-		// Find the name that was closest to the camera
+		NSMutableArray* selectedBrushes = [map->selMgr getSelectedBrushes];
 		
-		for( s = 0 ; s < hits*4 ; s += 4 )
+		// Special case #1 : Selecting faces when brushes are currently selected
+		//
+		// If the user has brushes selected and they are trying to select a face, check for faces
+		// that were clicked belonging to the selected brushes first.  This is most likely what the user wants
+		// to have happen.
+		
+		if( [selectedBrushes count] > 0 && InCategory == TSC_Face )
 		{
-			float zmin = buffer[s+1] / (float)0xffffffff;
-			NSNumber* selectName = [NSNumber numberWithUnsignedInt:buffer[s+3]];
-			
-			switch( InCategory )
+			for( s = 0 ; s < hits*4 ; s += 4 )
 			{
-				case TSC_Edge:
-				case TSC_Vertex:
+				float zmin = buffer[s+1] / (float)0xffffffff;
+				NSNumber* selectName = [NSNumber numberWithUnsignedInt:buffer[s+3]];
+				
+				NSObject* obj = [map findObjectByPickName:selectName];
+				
+				if( [obj isKindOfClass:[TFace class]] )
 				{
-					// When selecting verts, we want every vert that the mouse was on top of.
+					TFace* face = (TFace*)obj;
 					
-					[selections addObject:[selectName copy]];
-				}
-				break;
-					
-				default:
-				{
-					// When NOT selecting verts, we only want the closest hit.
-					
-					if( zmin < closestZ )
+					for( TBrush* B in selectedBrushes )
 					{
-						closestZ = zmin;
-						closestSelectName = [selectName copy];
+						if( [B->faces containsObject:face] )
+						{
+							if( zmin < closestZ )
+							{
+								closestZ = zmin;
+								closestSelectName = [selectName copy];
+							}
+						}
 					}
 				}
-				break;
+			}
+			
+			if( closestZ != 1.0f )
+			{
+				[selections addObject:closestSelectName];
+			}
+		}
+		
+		// If no special case selections have been made yet, do the normal selection criteria.
+		
+		if( [selections count] == 0 )
+		{
+			for( s = 0 ; s < hits*4 ; s += 4 )
+			{
+				float zmin = buffer[s+1] / (float)0xffffffff;
+				NSNumber* selectName = [NSNumber numberWithUnsignedInt:buffer[s+3]];
+				
+				switch( InCategory )
+				{
+					case TSC_Edge:
+					case TSC_Vertex:
+					{
+						// When selecting verts, we want every vert that the mouse was on top of.
+						
+						[selections addObject:[selectName copy]];
+					}
+					break;
+						
+					default:
+					{
+						// When NOT selecting verts, we only want the closest hit.
+						
+						if( zmin < closestZ )
+						{
+							closestZ = zmin;
+							closestSelectName = [selectName copy];
+						}
+					}
+					break;
+				}
 			}
 		}
 		
@@ -214,7 +258,7 @@
 					
 					TEdge* G = (TEdge*)obj;
 					TBrush* ownerBrush = nil;
-					NSMutableArray* selectedBrushes = [map->selMgr getSelections:TSC_Level];
+					selectedBrushes = [map->selMgr getSelectedBrushes];
 					
 					// Find the brush that contains the clicked edge
 					

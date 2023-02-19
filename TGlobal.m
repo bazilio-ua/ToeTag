@@ -32,6 +32,16 @@
 	return self;
 }
 
+-(void) finalize
+{
+	if( data != nil )
+	{
+		free( data );
+	}
+
+	[super finalize];
+}
+
 -(void) resetToStart
 {
 	currentIdx = 0;
@@ -47,11 +57,11 @@
 		
 		if( data == nil )
 		{
-			data = NSAllocateCollectable( maxIdx * (numFloatsPerElement * sizeof(float)), NSScannedOption );
+			data = malloc( maxIdx * (numFloatsPerElement * sizeof(float)) );
 		}
 		else
 		{
-			data = NSReallocateCollectable( data, maxIdx * (numFloatsPerElement * sizeof(float)), NSScannedOption );
+			data = realloc( data, maxIdx * (numFloatsPerElement * sizeof(float)) );
 		}
 	}
 
@@ -238,12 +248,20 @@
 	return self;
 }
 
+-(void) finalize
+{
+	if( verts != nil )	free( verts );
+	if( uvs != nil )	free( uvs );
+	
+	[super finalize];
+}
+
 -(void) finalizeInternals
 {
 	elementCount = [triangles count];
 	
-	verts = NSAllocateCollectable( sizeof(float) * elementCount * 3, NSScannedOption );
-	uvs = NSAllocateCollectable( sizeof(float) * elementCount * 2, NSScannedOption );
+	verts = malloc( sizeof(float) * elementCount * 3 );
+	uvs = malloc( sizeof(float) * elementCount * 2 );
 	
 	float* vp = verts;
 	float* uvp = uvs;
@@ -345,7 +363,16 @@ static TGlobal* GData = nil;
 	[paletteReader openFileFromResources:@"QuakePalette.lmp"];
 	
 	NSData* data = [paletteReader->fileHandle readDataToEndOfFile];
-	[data getBytes:palette];
+	byte rawdata[768];
+	[data getBytes:rawdata length:768];
+	
+	palette = [NSMutableArray new];
+	
+	int x;
+	for( x = 0 ; x < 768 ; x += 3 )
+	{
+		[palette addObject:[[TVec3D alloc] initWithX:rawdata[x] Y:rawdata[x+1] Z:rawdata[x+2]]];
+	}
 	
 	[paletteReader closeFile];
 
@@ -394,7 +421,7 @@ static TGlobal* GData = nil;
 	texture->bShowInBrowser = NO;
 	texture->width = [[img bestRepresentationForDevice:nil] pixelsWide];
 	texture->height = [[img bestRepresentationForDevice:nil] pixelsHigh];
-	texture->RGBBytesMips[0] = NSAllocateCollectable( (texture->width * texture->height) * 3, NSScannedOption );
+	texture->RGBBytes = (byte*)malloc( (texture->width * texture->height) * 3 );
 	
 	int w, h;
 	NSColor* color;
@@ -405,7 +432,7 @@ static TGlobal* GData = nil;
 			int idx = ((h * texture->width) + w) * 3;
 			color = [bitmap colorAtX:w y:h];
 			
-			byte* rgb = texture->RGBBytesMips[0] + idx;
+			byte* rgb = texture->RGBBytes + idx;
 			
 			*rgb = (byte)([color redComponent] * 255);
 			*(rgb + 1) = (byte)([color greenComponent] * 255);
@@ -460,7 +487,15 @@ static TGlobal* GData = nil;
 		[GData->dragAxis addObject:[[TVec3D alloc] initWithX:0 Y:1 Z:0]];	[GData->dragAxis addObject:[[TVec3D alloc] initWithX:1 Y:0 Z:0]];	[GData->dragAxis addObject:[[TVec3D alloc] initWithX:0 Y:0 Z:1]];
 		[GData->dragAxis addObject:[[TVec3D alloc] initWithX:0 Y:-1 Z:0]];	[GData->dragAxis addObject:[[TVec3D alloc] initWithX:-1 Y:0 Z:0]];	[GData->dragAxis addObject:[[TVec3D alloc] initWithX:0 Y:0 Z:-1]];
 		
-		GData->bDrawingPaused = NO;
+		GData->drawingPausedRefCount = 0;
+
+		// Standard string attributes
+		
+		NSFont* font = [NSFont fontWithName:@"Andale Mono" size:14.0];
+		GData->standardStringAttribs = [NSMutableDictionary dictionary];
+		[GData->standardStringAttribs setObject:font forKey:NSFontAttributeName];
+		[GData->standardStringAttribs setObject:[NSColor whiteColor] forKey:NSForegroundColorAttributeName];
+		[GData->standardStringAttribs setObject:[NSNumber numberWithFloat:-2.0] forKey:NSStrokeWidthAttributeName];
 	}
 	
 	return GData;
@@ -518,7 +553,7 @@ static TGlobal* GData = nil;
 // Searches through the palette and finds the index that is closest to
 // InR,InG,InB using error diffusion.
 
--(byte) getBestPaletteIndexForR:(int)InR G:(int)InG B:(int)InB
+-(byte) getBestPaletteIndexForR:(int)InR G:(int)InG B:(int)InB AllowFullbrights:(BOOL)InAllowFullbrights
 {
 	int i, dr, dg, db, bestdistortion, distortion, bestcolor;
 	
@@ -528,14 +563,20 @@ static TGlobal* GData = nil;
 	
 	bestdistortion = ( InR*InR + InG*InG + InB*InB ) * 2;
 	bestcolor = 0;
+	int max = 256;
 	
-	for( i = 0 ; i < 256 ; ++i )
+	if( InAllowFullbrights == NO )
 	{
-		int palidx = i * 3;
+		max -= 32;
+	}
+	
+	for( i = 0 ; i < max ; ++i )
+	{
+		TVec3D* color = [palette objectAtIndex:i];
 		
-		dr = InR - (int)palette[palidx];
-		dg = InG - (int)palette[palidx+1];
-		db = InB - (int)palette[palidx+2];
+		dr = InR - (int)color->x;
+		dg = InG - (int)color->y;
+		db = InB - (int)color->z;
 		
 		distortion = dr*dr + dg*dg + db*db;
 		

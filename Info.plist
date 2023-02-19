@@ -40,12 +40,12 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2.00</string>
+	<string>2.30</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>SUFeedURL</key>
-	<string>http://www.wantonhubris.com/toetag/appcast/ToeTagVersions.xml</string>
+	<string>http://www.wantonhubris.com/toetag/appcast/ToeTagVersionsNew.xml</string>
 </dict>
 </plist>

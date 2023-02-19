@@ -240,6 +240,8 @@
 			break;
 		}
 	}
+	
+	[map markAllTexturesDirtyRenderArray];
 }
 
 -(void) redo
@@ -401,6 +403,8 @@
 			break;
 		}
 	}
+	
+	[map markAllTexturesDirtyRenderArray];
 }
 
 @end
@@ -468,6 +472,7 @@
 		else
 		{
 			[map updateChangeCount:NSChangeDone];
+			[map markAllTexturesDirtyRenderArray];
 		}
 		
 		recordRefCount = 0;

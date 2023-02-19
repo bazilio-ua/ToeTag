@@ -192,8 +192,6 @@
 							}
 						}
 					}
-					
-					[map redrawLevelViewports];
 				}
 				break;
 
@@ -228,6 +226,9 @@
 				bCaptureMouse = NO;
 				break;
 		}
+		
+		[map->selMgr markTexturesOnSelectedDirtyRenderArray];
+		[map redrawLevelViewports];
 	}
 }
 
@@ -344,7 +345,7 @@
 		cameraLocation = [[TVec3D alloc] initWithX:[[subchunks objectAtIndex:1] floatValue] Y:[[subchunks objectAtIndex:2] floatValue] Z:[[subchunks objectAtIndex:3] floatValue]];
 		cameraRotation = [[TVec3D alloc] initWithX:[[subchunks objectAtIndex:4] floatValue] Y:[[subchunks objectAtIndex:5] floatValue] Z:[[subchunks objectAtIndex:6] floatValue]];
 		
-		[self setNeedsDisplay:YES];
+		[[self window] flushWindow];
 	}
 }
 

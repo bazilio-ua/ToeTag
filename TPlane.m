@@ -20,6 +20,8 @@
 	uoffset = voffset = rotation = 0;
 	uscale = vscale = 1;
 	
+	textureName = @"";
+	
 	return self;
 }
 
@@ -104,12 +106,12 @@
 
 -(BOOL) isAlmostEqualTo:(TPlane*)In
 {
-	if( [normal isAlmostEqualTo:In->normal] == YES && fabs(dist - In->dist) < NUMBERS_ARE_SAME_LARGE_EPSILON )
+	if( fabs(dist - In->dist) > NUMBERS_ARE_SAME_LARGE_EPSILON || [normal isAlmostEqualTo:In->normal] == NO )
 	{
-		return YES;
+		return NO;
 	}
 	
-	return NO;
+	return YES;
 }
 
 -(TPlane*) flip
@@ -122,6 +124,84 @@
 	
 	// Return self as a convenience to the caller. The flip happens in place.
 	return self;
+}
+
+- (NSComparisonResult)compareByVertexRatio:(TPlane*)InPlane
+{
+	if( vertexRatio == InPlane->vertexRatio )
+	{
+		int diff = facesCut - InPlane->facesCut;
+		
+		if( diff == 0 )
+		{
+			return NSOrderedSame;
+		}
+		else if( diff < 0 )
+		{
+			return NSOrderedAscending;
+		}
+		
+		return NSOrderedDescending;
+	}
+
+	float diff = vertexRatio - InPlane->vertexRatio;
+
+	if( diff < 0 )
+	{
+		return NSOrderedAscending;
+	}
+	
+	return NSOrderedDescending;
+}
+
+- (NSComparisonResult)compareByNormalStrength:(TPlane*)InPlane
+{
+	float nx = fabs( normal->x );
+	float ny = fabs( normal->y );
+	float nz = fabs( normal->z );
+
+	float pnx = fabs( InPlane->normal->x );
+	float pny = fabs( InPlane->normal->y );
+	float pnz = fabs( InPlane->normal->z );
+	
+	if( nx == pnx )
+	{
+		if( ny == pny )
+		{
+			if( nz > pnz )
+			{
+				return NSOrderedAscending;
+			}
+			else if( nz < pnz )
+			{
+				return NSOrderedDescending;
+			}
+		}
+		else
+		{
+			if( ny > pny )
+			{
+				return NSOrderedDescending;
+			}
+			else if( ny < pny )
+			{
+				return NSOrderedAscending;
+			}
+		}
+	}
+	else
+	{
+		if( nx > pnx )
+		{
+			return NSOrderedAscending;
+		}
+		else if( nx < pnx )
+		{
+			return NSOrderedDescending;
+		}
+	}
+	
+	return NSOrderedSame;
 }
 
 @end

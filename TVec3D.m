@@ -206,12 +206,20 @@
 
 -(BOOL) isAlmostEqualTo:(TVec3D*)In
 {
-	if( fabs( x - In->x ) < VERTS_ARE_SAME_EPSILON && fabs( y - In->y ) < VERTS_ARE_SAME_EPSILON && fabs( z - In->z ) < VERTS_ARE_SAME_EPSILON )
+	if( fabs( x - In->x ) > VERTS_ARE_SAME_EPSILON || fabs( y - In->y ) > VERTS_ARE_SAME_EPSILON || fabs( z - In->z ) > VERTS_ARE_SAME_EPSILON )
 	{
-		return YES;
+		return NO;
 	}
 	
-	return NO;
+	return YES;
+}
+
+- (NSComparisonResult)compareBySize:(TVec3D*)InV
+{
+	NSString* nameA = [NSString stringWithFormat:@"%f, %f, %f", x, y, z];
+	NSString* nameB = [NSString stringWithFormat:@"%f, %f, %f", InV->x, InV->y, InV->z];
+	
+	return [nameA caseInsensitiveCompare:nameB];
 }
 
 @end

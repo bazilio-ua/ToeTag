@@ -1,10 +1,6 @@
 
 @implementation TPreferencesPanelDelegate
 
--(void) awakeFromNib
-{
-}
-
 - (BOOL)windowShouldClose:(id)sender
 {
 	// The controls (sadly) don't send their values unless the user presses ENTER so manually grab and save them

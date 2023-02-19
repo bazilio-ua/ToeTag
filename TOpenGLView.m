@@ -56,6 +56,7 @@
 		bDocInitDone = YES;
 		[self documentInit];
 		[self registerTextures];
+		[self display];
 	}
 	
 	if( bReadyToRender == NO )
@@ -88,6 +89,39 @@
 	[self drawWorld:InMAP SelectedState:YES];
 	
 	glDepthMask( TRUE );
+	
+	// -----------------------------------------------------
+	// Text
+	
+	/*
+	GLint matrixMode;
+	GLfloat height, width;
+
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+	
+	width = viewport[2];
+	height = viewport[3];
+	
+	// set orthograhic 1:1  pixel transform in local view coords
+	glGetIntegerv (GL_MATRIX_MODE, &matrixMode);
+	glMatrixMode (GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity ();
+	glMatrixMode (GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity ();
+	glScalef (2.0f / width, -2.0f /  height, 1.0f);
+	glTranslatef (-width / 2.0f, -height / 2.0f, 0.0f);
+	
+	glColor4f (1.0f, 1.0f, 1.0f, 1.0f);
+	[titleString drawAtPoint:NSMakePoint( 0, 0 )];
+	
+	glPopMatrix(); // GL_MODELVIEW
+	glMatrixMode (GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode (matrixMode);
+	*/
 	
 	// -----------------------------------------------------
 	// Finish up
@@ -186,8 +220,6 @@
 		[T registerWithCurrentOpenGLContext];
 	}
 
-	[self display];
-	
 	[NSOpenGLContext clearCurrentContext];
 }
 
@@ -241,6 +273,7 @@
 			[map->historyMgr startRecord:@"Delete All"];
 			
 			[map destroyAllSelected];
+			[map markAllTexturesDirtyRenderArray];
 			[map redrawLevelViewports];
 
 			[map->historyMgr stopRecord];

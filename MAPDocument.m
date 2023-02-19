@@ -308,7 +308,7 @@
 	
 	// UI
 	
-	[self registerTexturesWithViewports];
+	[self registerTexturesWithViewports:YES];
 	[self populateCreateEntityMenu];
 }
 
@@ -528,9 +528,11 @@
 			}
 		}
 	}
+
+	// If no entity class could be located, assume the worldspawn
 	
-	assert(0);	// can't happen - how do you have an object without an entity class?
-	return nil;
+	TEntity* worldspawn = [self findEntityByClassName:@"worldspawn"];
+	return worldspawn->entityClass;
 }
 
 -(TEntity*) getEntityFor:(NSObject*)InObject
@@ -571,8 +573,10 @@
 		}
 	}
 	
-	assert(0);	// can't happen - how do you have an object without a corresponding entity owning it?
-	return nil;
+	// If no entity could be located, assume the worldspawn
+	
+	TEntity* worldspawn = [self findEntityByClassName:@"worldspawn"];
+	return worldspawn;
 }
 
 -(void) destroyAllSelected
@@ -687,8 +691,6 @@
 
 -(TTexture*) findTextureByName:(NSString*)InName
 {
-	//return defaultTexture;
-
 	TTexture* texture = [textureLookUps objectForKey:[InName uppercaseString]];
 	
 	if( texture == nil )
@@ -697,6 +699,17 @@
 	}
 	
 	return texture;
+}
+
+-(void) removeTextureByName:(NSString*)InName
+{
+	TTexture* texture = [textureLookUps objectForKey:[InName uppercaseString]];
+	
+	if( texture != nil )
+	{
+		[textureLookUps removeObjectForKey:[InName uppercaseString]];
+		[texturesFromWADs removeObject:texture];
+	}
 }
 
 -(BOOL) doesTextureExist:(NSString*)InName
@@ -750,7 +763,7 @@
 	// Try to load the WAD from the Quake directory
 	
 	bWadLoaded = [self loadWADFullPath:[NSString stringWithFormat:@"%@/ID1/%@", [[[NSUserDefaultsController sharedUserDefaultsController] values] valueForKey:@"quakeDirectory"], InName]];
-	
+
 	// Try to load from the game/mod directory
 	
 	if( !bWadLoaded && [gameName length] > 0 )
@@ -789,7 +802,9 @@
 		}
 	}
 	
-	[self registerTexturesWithViewports];
+	[self registerTexturesWithViewports:NO];
+	
+	[self markAllTexturesDirtyRenderArray];
 	
 	return YES;
 }
@@ -798,6 +813,8 @@
 {
 	TWADWriter* wadwriter = [TWADWriter new];
 	[wadwriter saveFile:InFilename Map:self];
+
+	[self markAllTexturesDirtyRenderArray];
 }
 
 // Redraws all viewports related to this view that are showing the level
@@ -822,13 +839,18 @@
 	}
 }
 
--(void) registerTexturesWithViewports
+-(void) registerTexturesWithViewports:(BOOL)InRedrawViewports
 {
 	[self sortTexturesBySize];
 	
 	for( TOpenGLView* VW in textureViewports )
 	{
 		[VW registerTextures];
+		
+		if( InRedrawViewports )
+		{
+			[[VW window] flushWindow];
+		}
 	}
 }
 
@@ -1056,6 +1078,7 @@
 	[self copy:self];
 	[self destroyAllSelected];
 	
+	[self markAllTexturesDirtyRenderArray];
 	[self redrawLevelViewports];
 
 	[historyMgr stopRecord];
@@ -1132,7 +1155,7 @@
 
 - (void)paste:(id)sender
 {
-	[TGlobal G]->bDrawingPaused = YES;
+	[TGlobal G]->drawingPausedRefCount++;
 	
 	[historyMgr startRecord:@"Paste"];
 	
@@ -1207,6 +1230,8 @@
 			}
 			
 			[historyMgr stopRecord];
+			
+			[self markAllTexturesDirtyRenderArray];
 		}
 		else
 		{
@@ -1225,14 +1250,15 @@
 	
 	[historyMgr stopRecord];
 
-	[TGlobal G]->bDrawingPaused = NO;
+	[TGlobal G]->drawingPausedRefCount--;
 
 	[self refreshInspectors];
-	[self redrawLevelViewports];
+	[self redrawTextureViewports];
 }
 
 // Looks at all selected entities/brushes and if they all have the same quickgroup ID, a new one is generated for them.
 // If the IDs differ, we remove them instead.
+
 -(void) maybeCreateNewQuickGroupID
 {
 	int lastQuickgroupID = -1;
@@ -1321,7 +1347,7 @@
 
 -(void) importEntitiesFromText:(NSMutableString*)InText SelectAfterImport:(BOOL)InSelectAfterImport
 {
-	[TGlobal G]->bDrawingPaused = YES;
+	[TGlobal G]->drawingPausedRefCount++;
 	
 	NSMutableArray* lines = [[InText componentsSeparatedByString: @"\n"] mutableCopy];
 	
@@ -1400,8 +1426,20 @@
 			}
 		}
 	}
-
-	[TGlobal G]->bDrawingPaused = NO;
+	
+	if( [pendingWADName length] > 0 )
+	{
+		// If the WAD is different from what is currently loaded, load the new WAD.
+		// TODO: might be nice if this would append the new WAD rather than just loading the new one.  Then ask the user to save the newly merged WAD afterwards.
+		
+		if( [pendingWADName isEqualToString:lastLoadedWADName] == NO )
+		{
+			[self loadWAD:pendingWADName];
+			lastLoadedWADName = [pendingWADName mutableCopy];
+		}
+	}
+	
+	[TGlobal G]->drawingPausedRefCount--;
 }
 
 // Creates a single entity from the Quake MAP text in InText
@@ -1482,7 +1520,7 @@
 			[worldspawn->keyvalues setValue:game forKey:@"_game"];
 		}
 		
-		[self loadWAD:wad];
+		pendingWADName = [wad mutableCopy];
 	}
 	
 	// Read the lines and parse the entity
@@ -1496,7 +1534,7 @@
 	float uscale, vscale;
 	TPlane* plane;
 	
-	NSOperationQueue* queue = [NSOperationQueue new];
+	//NSOperationQueue* queue = [NSOperationQueue new];
 	
 	for( NSString* S in lines )
 	{
@@ -1606,14 +1644,31 @@
 			{
 				if( bTemporaryBrush == NO )
 				{
-					[queue addOperation:[[NSOperationCreateBrushFromPlanes alloc] initWithMap:self ClipPlanes:clipPlanes quickGroupID:brushQuickGroupID Entity:entity SelectAfterImport:InSelectAfterImport]];
-					[[NSGarbageCollector defaultCollector] collectIfNeeded];
+					//[queue addOperation:[[NSOperationCreateBrushFromPlanes alloc] initWithMap:self ClipPlanes:clipPlanes quickGroupID:brushQuickGroupID Entity:entity SelectAfterImport:InSelectAfterImport]];
+
+					///*
+					{
+						TBrush* brush = [TBrush createBrushFromPlanes:clipPlanes MAP:self];
+						
+						[entity->brushes addObject:brush];
+						[historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_AddBrush Object:brush Owner:entity]];
+						
+						brush->quickGroupID = brushQuickGroupID;
+						
+						if( InSelectAfterImport == YES )
+						{
+							[selMgr addSelection:brush];
+						}
+						
+						//NSLog( @"Brush created from %d planes", [clipPlanes count] );
+					}
+					//*/
 				}
 				clipPlanes = nil;
 			}
 			else
 			{
-				[queue waitUntilAllOperationsAreFinished];
+				//[queue waitUntilAllOperationsAreFinished];
 				
 				[entity finalizeInternals:self];
 				
@@ -1776,7 +1831,9 @@
 					if( [selMgr isSelected:B] || [selMgr isSelected:F] )
 					{
 						[historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_ModifyFaceTextureName Object:F OldData:[F->textureName mutableCopy] NewData:[texturename mutableCopy]]];
+ 						[F markDirtyRenderArray];
 						F->textureName = [texturename mutableCopy];
+						[F markDirtyRenderArray];
 						
 						[F generateTexCoords:self];
 					}
@@ -2672,338 +2729,6 @@
 	return newBrush;
 }
 
-// Returns an array of convex brushes after breaking down InBrush.  Calls itself recursively.
-
--(NSMutableArray*) breakDownIntoConvexBrushes:(TBrush*)InBrush
-{
-	NSMutableArray* convexBrushes = [NSMutableArray new];
-	
-	// If the brush is already convex, just return it.
-	
-	if( [InBrush isConvex] )
-	{
-		[convexBrushes addObject:InBrush];
-		return convexBrushes;
-	}
-	
-	// The brush is not convex so we need to break it down.
-	
-	// Create a vertex cloud of unique vertices
-	
-	NSMutableArray* vertexCloud = [NSMutableArray new];
-	
-	for( TFace* F in InBrush->faces )
-	{
-		for( TVec3D* V in F->verts )
-		{
-			BOOL bIsInCloud = NO;
-			
-			for( TVec3D* VV in vertexCloud )
-			{
-				if( [VV isAlmostEqualTo:V] )
-				{
-					bIsInCloud = YES;
-					break;
-				}
-			}
-			
-			if( bIsInCloud == NO )
-			{
-				[vertexCloud addObject:[V mutableCopy]];
-			}
-		}
-	}
-	
-	NSMutableArray* planes = [NSMutableArray new];
-	
-	// Generate a list of connected edges that make up this brush.
-	
-	TVec3D *v1, *v2;
-	TPlaneX* plane;
-	BOOL bAlreadyHavePlane, bFront, bBack;
-	
-	NSMutableArray* uniqueEdges = [NSMutableArray new];
-	
-	for( TFace* F in InBrush->faces )
-	{
-		for( TEdge* E in F->edges )
-		{
-			TEdgeX* ex = [TEdgeX new];
-			
-			// Find the indices of the edge verts in the vertex cloud
-			
-			ex->start = ex->end = -1;
-			int idx = 0;
-			
-			for( TVec3D* V in vertexCloud )
-			{
-				if( [V isAlmostEqualTo:[F->verts objectAtIndex:E->verts[0]]] )
-				{
-					ex->start = idx;
-				}
-				if( [V isAlmostEqualTo:[F->verts objectAtIndex:E->verts[1]]] )
-				{
-					ex->end = idx;
-				}
-				
-				if( ex->start != -1 && ex->end != -1 )
-				{
-					break;
-				}
-
-				idx++;
-			}
-			
-			// Make sure that the edge is unique before keeping it
-			
-			if( ex->start != -1 && ex->end != -1 )
-			{
-				BOOL bPlaneIsUnique = YES;
-				
-				for( TEdgeX* EX in uniqueEdges )
-				{
-					if( [EX isEqualTo:ex] )
-					{
-						bPlaneIsUnique = NO;
-						break;
-					}
-				}
-				
-				if( bPlaneIsUnique == YES )
-				{
-					[uniqueEdges addObject:ex];
-				}
-			}
-		}
-	}
-	
-	// Gather up and store a list of which edges are connected to each end of every unique edge.
-	
-	for( TEdgeX* ex in uniqueEdges )
-	{
-		ex->connectedToStart = [NSMutableArray new];
-		ex->connectedToEnd = [NSMutableArray new];
-		
-		for( TEdgeX* ex2 in uniqueEdges )
-		{
-			if( ex != ex2 )
-			{
-				if( ex2->start == ex->end || ex2->end == ex->end )
-				{
-					[ex->connectedToEnd addObject:ex2];
-				}
-			}
-		}
-	}
-	
-	TVec3D* v0;
-	
-	for( TEdgeX* ex in uniqueEdges )
-	{
-		v0 = [vertexCloud objectAtIndex:ex->start];
-		v1 = [vertexCloud objectAtIndex:ex->end];
-		
-		for( TEdgeX* exc in ex->connectedToEnd )
-		{
-			if( exc->start == ex->end )
-			{
-				v2 = [vertexCloud objectAtIndex:exc->end];
-			}
-			else
-			{
-				v2 = [vertexCloud objectAtIndex:exc->start];
-			}
-
-			plane = [[TPlaneX alloc] initFromTriangleA:v0 B:v2 C:v1];
-			
-			// See if we already have this plane
-			
-			bAlreadyHavePlane = NO;
-			
-			for( TPlaneX* P in planes )
-			{
-				if( [P isAlmostEqualTo:plane] )
-				{
-					bAlreadyHavePlane = YES;
-					break;
-				}
-			}
-			
-			if( !bAlreadyHavePlane )
-			{
-				// Check and make sure that this plane splits the vertex cloud and doesn't just rest on one side of it before adding to the array
-				
-				bFront = bBack = NO;
-				
-				for( TVec3D* V in vertexCloud )
-				{
-					if( [plane getVertexSide:V] == S_Front )  { bFront = YES; }
-					if( [plane getVertexSide:V] == S_Behind ) { bBack = YES; }
-					if( bFront && bBack ) { break; }
-				}
-				
-				if( bFront && bBack )
-				{
-					[planes addObject:plane];
-					
-					plane->vertCount = 0;
-					
-					for( TVec3D* V in vertexCloud )
-					{
-						if( [plane getVertexSide:V] == S_OnPlane ) { plane->vertCount++; }
-					}
-				}
-			}
-		}
-	}
-	
-	// If we don't have any planes at this point, that means we only have planes on the outer edges.
-	
-	if( [planes count] == 0 )
-	{
-		[convexBrushes addObject:InBrush];
-		return convexBrushes;
-	}
-
-	// This plane will be the plane that we will use to split the brush.
-	
-	TPlaneX* splitter = nil;
-
-	// Check every plane and see if any of them will result in one of the brushes being convex.  If so, that's our automatic best plane.
-	
-	TBrush *frontBrush, *backBrush;
-	TFace *frontFace, *backFace;
-	int numSplitFaces;
-	EFaceSplit res;
-	
-	for( TPlaneX* PX in planes )
-	{
-		// Split each face of InBrush and add it into either the front or back brush
-		
-		frontBrush = [TBrush new];
-		backBrush = [TBrush new];
-		numSplitFaces = 0;
-		
-		for( TFace* F in InBrush->faces )
-		{
-			frontFace = backFace = nil;
-			res = [F splitWithPlane:PX Front:&frontFace Back:&backFace];
-			
-			switch( res )
-			{
-				case TFS_Front:
-					[frontBrush->faces addObject:F];
-					break;
-					
-				case TFS_Back:
-					[backBrush->faces addObject:F];
-					break;
-					
-				case TFS_Split:
-					[frontBrush->faces addObject:frontFace];
-					[backBrush->faces addObject:backFace];
-					numSplitFaces++;
-					break;
-			}
-		}
-
-		// If the plane didn't split any faces and we ended up with a convex chunk on one side or the other, we have an instant winner
-		
-		/*
-		if( numSplitFaces == 0 )
-		{
-			if( [frontBrush->faces count] > 2 &&  [backBrush->faces count] > 2 )
-			{
-				if( [frontBrush isConvex] || [backBrush isConvex] )
-				{
-					splitter = PX;
-					break;
-				}
-			}
-		}
-		*/
-		
-		// Compute a balance percentage for the plane
-		
-		PX->facesLeftUncut = [InBrush->faces count] - numSplitFaces;
-	}
-	
-	// If there are no obvious winner chosen above, then go ahead and sort the planes and use the best one from that result.
-		
-	if( splitter == nil )
-	{
-		[planes sortUsingSelector:@selector(compareByVertexCount:)];
-		
-		///*
-		NSLog( @" ------- sort ---------" );
-		for( TPlaneX* PX in planes )
-		{
-			NSLog( @"%f,%f,%f - %f", PX->normal->x, PX->normal->y, PX->normal->z, [PX getWeight] );
-		}
-		//*/
-		
-		// Split the brush along the best plane (which will be the first one after sorting)
-		
-		splitter = [planes objectAtIndex:0];
-	}
-
-	// Split each face of InBrush and add it into either the front or back brush
-	
-	frontBrush = [TBrush new];
-	backBrush = [TBrush new];
-	
-	for( TFace* F in InBrush->faces )
-	{
-		res = [F splitWithPlane:splitter Front:&frontFace Back:&backFace];
-		
-		switch( res )
-		{
-			case TFS_Front:
-				[frontBrush->faces addObject:F];
-				break;
-				
-			case TFS_Back:
-				[backBrush->faces addObject:F];
-				break;
-				
-			case TFS_Split:
-				[frontBrush->faces addObject:frontFace];
-				[backBrush->faces addObject:backFace];
-				break;
-		}
-	}
-	
-	if( [frontBrush->faces count] > 2 )
-	{
-		[frontBrush finalizeInternals];
-		
-		if( [frontBrush isConvex] )
-		{
-			[convexBrushes addObject:frontBrush];
-		}
-		else
-		{
-			[convexBrushes addObjectsFromArray:[self breakDownIntoConvexBrushes:frontBrush]];
-		}
-	}
-	
-	if( [backBrush->faces count] > 2 )
-	{
-		[backBrush finalizeInternals];
-		
-		if( [backBrush isConvex] )
-		{
-			[convexBrushes addObject:backBrush];
-		}
-		else
-		{
-			[convexBrushes addObjectsFromArray:[self breakDownIntoConvexBrushes:backBrush]];
-		}
-	}
-	
-	return convexBrushes;
-}
-
 -(void) csgMergeBoundingBox
 {
 	[historyMgr startRecord:@"CSG Merge Bounding Box"];
@@ -3079,166 +2804,6 @@
 	[historyMgr stopRecord];
 	
 	[self redrawLevelViewports];
-}
-
--(void) csgTestBreakDown
-{
-	[historyMgr startRecord:@"csgTestBreakDown"];
-	
-	NSMutableArray* selectedBrushes = [NSMutableArray new];
-	
-	for( TEntity* E in entities )
-	{
-		for( TBrush* B in E->brushes )
-		{
-			if( [selMgr isSelected:B] )
-			{
-				[selectedBrushes addObject:B];
-			}
-		}
-	}
-
-	NSMutableArray* convexBrushes = [NSMutableArray new];
-	
-	for( TBrush* B in selectedBrushes )
-	{
-		[convexBrushes addObjectsFromArray:[self breakDownIntoConvexBrushes:B]];
-	}
-
-	// Delete the originally selected brushes
-	
-	for( TBrush* B in selectedBrushes )
-	{
-		[selMgr removeSelection:B];
-		[self destroyObject:B];
-	}
-
-	// Add the new brushes
-	
-	TEntity* E = [self findBestSelectedBrushBasedEntity];
-	
-	for( TBrush* B in convexBrushes )
-	{
-		[B finalizeInternals];
-		[B generateTexCoords:self];
-		
-#if 0
-		NSMutableArray* existingPlanes = [NSMutableArray new];
-		
-		for( TFace* F in B->faces )
-		{
-			TPlane* plane = [[TPlane alloc] initFromTriangleA:[F->verts objectAtIndex:0] B:[F->verts objectAtIndex:2] C:[F->verts objectAtIndex:1]];
-			
-			BOOL bPlaneExists = NO;
-			for( TPlane* P in existingPlanes )
-			{
-				if( [P isAlmostEqualTo:plane] )
-				{
-					bPlaneExists = YES;
-					break;
-				}
-			}
-			
-			if( bPlaneExists == NO )
-			{
-				[plane copyTexturingAttribsFrom:F];
-				[existingPlanes addObject:plane];
-			}
-		}
-		
-		NSMutableArray* brushes = [NSMutableArray arrayWithObject:B];
-		TBrush* finishedBrush = [self createConvexHull:brushes useBrushPlanesFirst:YES];
-		
-		[finishedBrush finalizeInternals];
-		[finishedBrush generateTexCoords:self];
-		
-		[historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_AddBrush Object:finishedBrush Owner:E]];
-		[E->brushes addObject:finishedBrush];
-#else
-		[historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_AddBrush Object:B Owner:E]];
-		[E->brushes addObject:B];
-#endif
-	}
-
-	[historyMgr stopRecord];
-	
-	[self redrawLevelViewports];
-	
-	/*
-	[historyMgr startRecord:@"CSG Merge Bounding Box"];
-	
-	// Generate a vertex cloud
-	
-	NSMutableArray* vertexCloud = [NSMutableArray new];
-	NSMutableArray* faceCloud = [NSMutableArray new];
-	NSMutableArray* selectedBrushes = [NSMutableArray new];
-	
-	for( TEntity* E in entities )
-	{
-		for( TBrush* B in E->brushes )
-		{
-			if( [selMgr isSelected:B] )
-			{
-				[selectedBrushes addObject:B];
-				
-				for( TFace* F in B->faces )
-				{
-					for( TVec3D* V in F->verts )
-					{
-						BOOL bIsInCloud = NO;
-						
-						for( TVec3D* VV in vertexCloud )
-						{
-							if( [VV isAlmostEqualTo:V] )
-							{
-								bIsInCloud = YES;
-								break;
-							}
-						}
-						
-						if( bIsInCloud == NO )
-						{
-							[vertexCloud addObject:[V mutableCopy]];
-							[faceCloud addObject:F];
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	// Get the bounding box of the vertex cloud
-	
-	TBBox* bbox = [TBBox new];
-	
-	for( TVec3D* V in vertexCloud )
-	{
-		[bbox addVertex:V];
-	}
-	
-	// Create a new cube brush that surrounds the vertex cloud
-	
-	TEntity* E = [self findBestSelectedBrushBasedEntity];
-	TBrushBuilderCube* bbc = [TBrushBuilderCube new];
-	TBrush* brush = [bbc build:self Location:[bbox getCenter] Extents:[bbox getExtents] Args:NULL];
-
-	[historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_AddBrush Object:brush Owner:E]];
-	[E->brushes addObject:brush];
-	
-	[brush generateTexCoords:self];
-
-	// Delete the originally selected brushes
-	
-	for( TBrush* B in selectedBrushes )
-	{
-		[selMgr removeSelection:B];
-		[self destroyObject:B];
-	}
-	
-	[historyMgr stopRecord];
-	
-	[self redrawLevelViewports];
-	*/
 }
 
 -(void) csgSubtractFromWorld
@@ -3665,6 +3230,76 @@
 	}
 	
 	[selMgr unselectAll:TSC_Vertex];
+	
+	[historyMgr stopRecord];
+	
+	[self redrawLevelViewports];
+}
+
+-(void) csgTriangulateFan
+{
+	[historyMgr startRecord:@"Triangulate To Fan"];
+
+	for( TEntity* E in entities )
+	{
+		for( TBrush* B in E->brushes )
+		{
+			NSMutableArray* tempF = [NSMutableArray	arrayWithArray:B->faces];
+			
+			for( TFace* F in tempF )
+			{
+				if( [selMgr isSelected:B] || [selMgr isSelected:F] )
+				{
+					TVec3D* v0 = [F->verts objectAtIndex:0];
+					TVec3D* v1 = [F->verts objectAtIndex:1];
+					TVec3D* v2;
+					int v;
+					
+					for( v = 2 ; v < [F->verts count] ; ++v )
+					{
+						v2 = [F->verts objectAtIndex:v];
+						
+						TFace* FF = [TFace new];
+						
+						[FF copyTexturingAttribsFrom:F];
+						[FF->verts addObject:v0];
+						[FF->verts addObject:v1];
+						[FF->verts addObject:v2];
+						
+						[FF finalizeInternals];
+						 
+						[B->faces addObject:FF];
+						
+						v1 = v2;
+					}
+					
+					[B->faces removeObject:F];
+				}
+			}
+		}
+	}
+	
+	[historyMgr stopRecord];
+	
+	[self redrawLevelViewports];
+}
+	
+-(void) csgTriangulateFromCenter
+{
+	[historyMgr startRecord:@"Triangulate From Center"];
+	
+	
+	
+	[historyMgr stopRecord];
+	
+	[self redrawLevelViewports];
+}
+
+-(void) csgOptimize
+{
+	[historyMgr startRecord:@"Optimize"];
+	
+	
 	
 	[historyMgr stopRecord];
 	
@@ -4133,6 +3768,83 @@
 	[historyMgr stopRecord];
 	
 	[self redrawLevelViewports];
+}
+
+-(void) markAllTexturesDirtyRenderArray
+{
+	for( TTexture* T in texturesFromWADs )
+	{
+		T->bDirtyRenderArray = YES;
+	}
+}
+
+-(void) hideSelected
+{
+	[historyMgr startRecord:@"Hide Selected"];
+	
+	for( TEntity* E in entities )
+	{
+		if( [selMgr isSelected:E] )
+		{
+			[visMgr hide:E];
+		}
+		
+		for( TBrush* B in E->brushes )
+		{
+			if( [selMgr isSelected:B] )
+			{
+				[visMgr hide:B];
+			}
+		}
+	}
+	
+	[self refreshInspectors];
+	[self redrawLevelViewports];
+	
+	[historyMgr stopRecord];
+}
+
+-(void) isolateSelected
+{
+	[historyMgr startRecord:@"Isolate"];
+	
+	[visMgr showAll];
+	
+	for( TEntity* E in entities )
+	{
+		if( [E isPointEntity] == YES )
+		{
+			if( [selMgr isSelected:E] == NO )
+			{
+				[visMgr hide:E];
+			}
+		}
+		else
+		{
+			for( TBrush* B in E->brushes )
+			{
+				if( [selMgr isSelected:B] == NO )
+				{
+					[visMgr hide:B];
+				}
+			}
+		}
+	}
+	
+	[self refreshInspectors];
+	[self redrawLevelViewports];
+	
+	[historyMgr stopRecord];
+}
+
+-(void) showAll
+{
+	[historyMgr startRecord:@"Show All"];
+	
+	[visMgr showAll];
+	
+	[self redrawLevelViewports];
+	[historyMgr stopRecord];
 }
 
 @end

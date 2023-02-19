@@ -22,6 +22,8 @@
 -(NSString*) getSelectedTextureName;
 -(TEntityClass*) getSelectedEntityClass;
 -(NSMutableArray*) getSelectedEntityClasses;
+-(NSMutableArray*) getSelectedBrushes;
 -(NSMutableArray*) getSelectedEntities;
+-(void) markTexturesOnSelectedDirtyRenderArray;
 
 @end

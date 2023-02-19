@@ -26,8 +26,6 @@
 
 -(BOOL) isVisible:(id)InObject
 {
-	//if( [self hasNeededSelectors:InObject] == NO )	return NO;
-	
 	if( [hiddenObjects objectForKey:[InObject getPickName]] == nil )
 	{
 		return YES;
@@ -38,14 +36,17 @@
 
 -(void) hide:(id)InObject
 {
-	//if( [self hasNeededSelectors:InObject] == NO )	return;
-	
 	if( [self isVisible:InObject] )
 	{
 		[map->historyMgr startRecord:@"Hide Object"];
 		[map->historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_HideObject Object:InObject]];
 		
 		[hiddenObjects setObject:InObject forKey:[InObject getPickName]];
+		
+		if( [InObject isKindOfClass:[TBrush class]] )
+		{
+			[InObject markDirtyRenderArray];
+		}
 		
 		// If an object is being hidden, it can't stay selected
 		[map->selMgr removeSelection:InObject];
@@ -56,12 +57,15 @@
 
 -(void) show:(id)InObject
 {
-	//if( [self hasNeededSelectors:InObject] == NO )	return;
-	
 	if( [self isVisible:InObject] == NO )
 	{
 		[map->historyMgr startRecord:@"Show Object"];
 		[map->historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_ShowObject Object:InObject]];
+		
+		if( [InObject isKindOfClass:[TBrush class]] )
+		{
+			[InObject markDirtyRenderArray];
+		}
 		
 		[hiddenObjects removeObjectForKey:[InObject getPickName]];
 		

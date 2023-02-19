@@ -128,7 +128,7 @@
 	TTexture* T = [map findTextureByName:[map->selMgr getSelectedTextureName]];
 	cameraLocation->y = -T->lastYPos;
 	
-	[self setNeedsDisplay:YES];
+	[[self window] flushWindow];
 }
 
 -(void) toggleQuickLook
@@ -175,7 +175,7 @@
 			bitsPerPixel:0];
 		
 		byte* dst = [imgrep bitmapData];
-		memcpy( dst, T->RGBBytesMips[0], (T->width * T->height) * 3 );
+		memcpy( dst, T->RGBBytes, (T->width * T->height) * 3 );
 		
 		NSImage* img = [[NSImage alloc] initWithSize:NSMakeSize( T->width, T->height )];
 		[img addRepresentation:imgrep];

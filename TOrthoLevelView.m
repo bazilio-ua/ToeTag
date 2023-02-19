@@ -141,7 +141,7 @@
 			}
 			break;
 
-			case TMA_CreateBrush:
+			case TMA_BoxSelection:
 			{
 				TBBox* bbox = [TBBox new];
 				[bbox addVertex:startPoint];
@@ -251,7 +251,7 @@
 		}
 		else
 		{
-			mouseAction = TMA_CreateBrush;
+			mouseAction = TMA_BoxSelection;
 		}
 		
 		ownerMouseAction = mouseAction;
@@ -289,7 +289,10 @@
 		{
 			startPoint = [worldMouseClickLocation mutableCopy];
 			
-			startPoint = [map snapVtxToGrid:startPoint];
+			if( mouseAction != TMA_BoxSelection )
+			{
+				startPoint = [map snapVtxToGrid:startPoint];
+			}
 		}
 		else
 		{
@@ -488,7 +491,53 @@
 					}
 					break;
 						
-					case TMA_CreateBrush:
+					case TMA_BoxSelection:
+					{
+						if( endPoint == nil && startPoint != nil )
+						{
+							endPoint = [startPoint mutableCopy];
+						}
+						
+						if( endPoint != nil )
+						{
+							// Drag the end clipping point
+							
+							float dx = [theEvent deltaX], dy = [theEvent deltaY];
+							
+							XDelta += dx * orthoZoom;
+							YDelta += dy * orthoZoom;
+							
+							float xdir = (XDelta < 0.0) ? -1 : 1;
+							float ydir = (YDelta < 0.0) ? -1 : 1;
+							
+							if( fabs(XDelta) )
+							{
+								xdir *= fabs(XDelta);
+								
+								endPoint->x += XVec->x * xdir;
+								endPoint->y += XVec->y * xdir;
+								endPoint->z += XVec->z * xdir;
+								
+								XDelta = 0;
+							}
+							if( fabs(YDelta) )
+							{
+								ydir *= fabs(YDelta);
+								
+								endPoint->x += YVec->x * ydir;
+								endPoint->y += YVec->y * ydir;
+								endPoint->z += YVec->z * ydir;
+								
+								YDelta = 0;
+							}
+							
+							// Finish
+							
+							[map redrawLevelViewports];
+						}
+					}
+					break;
+						
 					case TMA_SetClipPoints:
 					{
 						if( endPoint == nil && startPoint != nil )
@@ -529,30 +578,27 @@
 								YDelta = 0;
 							}
 						
-							if( mouseAction == TMA_SetClipPoints )
+							// Recompute clipping plane
+							
+							TVec3D* thirdPoint;
+							
+							switch( orientation )
 							{
-								// Recompute clipping plane
-								
-								TVec3D* thirdPoint;
-								
-								switch( orientation )
-								{
-									case TO_Top_XZ:
-										thirdPoint = [TVec3D addA:startPoint andB:[[TVec3D alloc] initWithX:0 Y:16 Z:0]];
-										break;
-										
-									case TO_Front_XY:
-										thirdPoint = [TVec3D addA:startPoint andB:[[TVec3D alloc] initWithX:0 Y:0 Z:16]];
-										break;
-										
-									case TO_Side_YZ:
-										thirdPoint = [TVec3D addA:startPoint andB:[[TVec3D alloc] initWithX:-16 Y:0 Z:0]];
-										break;
-								}
-								
-								clipPlane = [[TPlane alloc] initFromTriangleA:startPoint B:endPoint C:thirdPoint];
-								clipFlippedPlane = [[TPlane alloc] initFromTriangleA:endPoint B:startPoint C:thirdPoint];
+								case TO_Top_XZ:
+									thirdPoint = [TVec3D addA:startPoint andB:[[TVec3D alloc] initWithX:0 Y:16 Z:0]];
+									break;
+									
+								case TO_Front_XY:
+									thirdPoint = [TVec3D addA:startPoint andB:[[TVec3D alloc] initWithX:0 Y:0 Z:16]];
+									break;
+									
+								case TO_Side_YZ:
+									thirdPoint = [TVec3D addA:startPoint andB:[[TVec3D alloc] initWithX:-16 Y:0 Z:0]];
+									break;
 							}
+							
+							clipPlane = [[TPlane alloc] initFromTriangleA:startPoint B:endPoint C:thirdPoint];
+							clipFlippedPlane = [[TPlane alloc] initFromTriangleA:endPoint B:startPoint C:thirdPoint];
 							
 							// Finish
 							
@@ -600,17 +646,111 @@
 					}
 					break;
 
-					case TMA_CreateBrush:
+					case TMA_BoxSelection:
 					{
+						[map->historyMgr startRecord:@"Box Select"];
+						
+						TBBox* bbox = [TBBox new];
+						[bbox addVertex:startPoint];
+						[bbox addVertex:endPoint];
+						
+						NSMutableArray* planes = [NSMutableArray new];
+						
+						TVec3D *v0, *v1, *v2, *v3, *v4, *v5, *v6, *v7;
+						
+						switch( orientation )
+						{
+							case TO_Top_XZ:
+							{
+								v0 = [[TVec3D alloc] initWithX:bbox->min->x Y:-WORLD_SZ Z:bbox->min->z];
+								v1 = [[TVec3D alloc] initWithX:bbox->max->x Y:-WORLD_SZ Z:bbox->min->z];
+								v2 = [[TVec3D alloc] initWithX:bbox->max->x Y:-WORLD_SZ Z:bbox->max->z];
+								v3 = [[TVec3D alloc] initWithX:bbox->min->x Y:-WORLD_SZ Z:bbox->max->z];
+								
+								v4 = [[TVec3D alloc] initWithX:bbox->min->x Y:WORLD_SZ Z:bbox->min->z];
+								v5 = [[TVec3D alloc] initWithX:bbox->max->x Y:WORLD_SZ Z:bbox->min->z];
+								v6 = [[TVec3D alloc] initWithX:bbox->max->x Y:WORLD_SZ Z:bbox->max->z];
+								v7 = [[TVec3D alloc] initWithX:bbox->min->x Y:WORLD_SZ Z:bbox->max->z];
+							}
+								break;
+								
+							case TO_Front_XY:
+							{
+								v0 = [[TVec3D alloc] initWithX:bbox->min->x Y:bbox->min->y Z:WORLD_SZ];
+								v1 = [[TVec3D alloc] initWithX:bbox->max->x Y:bbox->min->y Z:WORLD_SZ];
+								v2 = [[TVec3D alloc] initWithX:bbox->max->x Y:bbox->max->y Z:WORLD_SZ];
+								v3 = [[TVec3D alloc] initWithX:bbox->min->x Y:bbox->max->y Z:WORLD_SZ];
+								
+								v4 = [[TVec3D alloc] initWithX:bbox->min->x Y:bbox->min->y Z:-WORLD_SZ];
+								v5 = [[TVec3D alloc] initWithX:bbox->max->x Y:bbox->min->y Z:-WORLD_SZ];
+								v6 = [[TVec3D alloc] initWithX:bbox->max->x Y:bbox->max->y Z:-WORLD_SZ];
+								v7 = [[TVec3D alloc] initWithX:bbox->min->x Y:bbox->max->y Z:-WORLD_SZ];
+							}
+								break;
+								
+							case TO_Side_YZ:
+							{
+								v0 = [[TVec3D alloc] initWithX:WORLD_SZ Y:bbox->min->y Z:bbox->min->z];
+								v1 = [[TVec3D alloc] initWithX:WORLD_SZ Y:bbox->max->y Z:bbox->min->z];
+								v2 = [[TVec3D alloc] initWithX:WORLD_SZ Y:bbox->max->y Z:bbox->max->z];
+								v3 = [[TVec3D alloc] initWithX:WORLD_SZ Y:bbox->min->y Z:bbox->max->z];
+								
+								v4 = [[TVec3D alloc] initWithX:-WORLD_SZ Y:bbox->min->y Z:bbox->min->z];
+								v5 = [[TVec3D alloc] initWithX:-WORLD_SZ Y:bbox->max->y Z:bbox->min->z];
+								v6 = [[TVec3D alloc] initWithX:-WORLD_SZ Y:bbox->max->y Z:bbox->max->z];
+								v7 = [[TVec3D alloc] initWithX:-WORLD_SZ Y:bbox->min->y Z:bbox->max->z];
+							}
+								break;
+						}
+						
+						[planes addObject:[[TPlane alloc] initFromTriangleA:v2 B:v1 C:v0]];
+						[planes addObject:[[TPlane alloc] initFromTriangleA:v5 B:v6 C:v7]];
+						[planes addObject:[[TPlane alloc] initFromTriangleA:v0 B:v1 C:v5]];
+						[planes addObject:[[TPlane alloc] initFromTriangleA:v1 B:v2 C:v6]];
+						[planes addObject:[[TPlane alloc] initFromTriangleA:v2 B:v3 C:v7]];
+						[planes addObject:[[TPlane alloc] initFromTriangleA:v3 B:v0 C:v4]];
+						
+						TBrush* boxSelectBrush = [TBrush createBrushFromPlanes:planes MAP:map];
+						[boxSelectBrush finalizeInternals];
+						
+						[map->selMgr unselectAll:TSC_Level];
+						
+						for( TEntity* E in map->entities )
+						{
+							if( [E isPointEntity] )
+							{
+								if( [boxSelectBrush isPointInside:E->location] )
+								{
+									[map->selMgr addSelection:E];
+								}
+							}
+							else
+							{
+								for( TBrush* B in E->brushes )
+								{
+									if( [B doesBrushIntersect:boxSelectBrush] )
+									{
+										[map->selMgr addSelection:B];
+									}
+								}
+							}
+						}
+						
+						[map->historyMgr stopRecord];
+						
+						startPoint = nil;
+						endPoint = nil;
+						
 						[map redrawLevelViewports];
 					}
-					break;
 				}
 				
 				bCaptureMouse = NO;
 			}
 			break;
 		}
+		
+		[map->selMgr markTexturesOnSelectedDirtyRenderArray];
 	}
 }
 
@@ -819,101 +959,14 @@
 				{
 					case TMA_SetClipPoints:
 					{
-						BOOL bSplit = NO;
-						
-						if( bCtrlDown )
-						{
-							bSplit = YES;
-						}
-						
 						if( bOptionDown )
 						{
-							[map csgClipSelectedBrushesAgainstPlane:clipFlippedPlane flippedPlane:clipPlane split:bSplit];
+							[map csgClipSelectedBrushesAgainstPlane:clipFlippedPlane flippedPlane:clipPlane split:bCtrlDown];
 						}
 						else
 						{
-							[map csgClipSelectedBrushesAgainstPlane:clipPlane flippedPlane:clipFlippedPlane split:bSplit];
+							[map csgClipSelectedBrushesAgainstPlane:clipPlane flippedPlane:clipFlippedPlane split:bCtrlDown];
 						}
-						
-						startPoint = nil;
-						endPoint = nil;
-					}
-					break;
-
-					case TMA_CreateBrush:
-					{
-						[map->historyMgr startRecord:@"Create Brush"];
-						
-						TBBox* bbox = [TBBox new];
-						[bbox addVertex:startPoint];
-						[bbox addVertex:endPoint];
-						
-						NSMutableArray* planes = [NSMutableArray new];
-						
-						TVec3D *v0, *v1, *v2, *v3, *v4, *v5, *v6, *v7;
-						
-						switch( orientation )
-						{
-							case TO_Top_XZ:
-							{
-								v0 = [[TVec3D alloc] initWithX:bbox->min->x Y:0 Z:bbox->min->z];
-								v1 = [[TVec3D alloc] initWithX:bbox->max->x Y:0 Z:bbox->min->z];
-								v2 = [[TVec3D alloc] initWithX:bbox->max->x Y:0 Z:bbox->max->z];
-								v3 = [[TVec3D alloc] initWithX:bbox->min->x Y:0 Z:bbox->max->z];
-
-								v4 = [[TVec3D alloc] initWithX:bbox->min->x Y:map->gridSz Z:bbox->min->z];
-								v5 = [[TVec3D alloc] initWithX:bbox->max->x Y:map->gridSz Z:bbox->min->z];
-								v6 = [[TVec3D alloc] initWithX:bbox->max->x Y:map->gridSz Z:bbox->max->z];
-								v7 = [[TVec3D alloc] initWithX:bbox->min->x Y:map->gridSz Z:bbox->max->z];
-							}
-							break;
-								
-							case TO_Front_XY:
-							{
-								v0 = [[TVec3D alloc] initWithX:bbox->min->x Y:bbox->min->y Z:0];
-								v1 = [[TVec3D alloc] initWithX:bbox->max->x Y:bbox->min->y Z:0];
-								v2 = [[TVec3D alloc] initWithX:bbox->max->x Y:bbox->max->y Z:0];
-								v3 = [[TVec3D alloc] initWithX:bbox->min->x Y:bbox->max->y Z:0];
-								
-								v4 = [[TVec3D alloc] initWithX:bbox->min->x Y:bbox->min->y Z:-map->gridSz];
-								v5 = [[TVec3D alloc] initWithX:bbox->max->x Y:bbox->min->y Z:-map->gridSz];
-								v6 = [[TVec3D alloc] initWithX:bbox->max->x Y:bbox->max->y Z:-map->gridSz];
-								v7 = [[TVec3D alloc] initWithX:bbox->min->x Y:bbox->max->y Z:-map->gridSz];
-							}
-							break;
-								
-							case TO_Side_YZ:
-							{
-								v0 = [[TVec3D alloc] initWithX:0 Y:bbox->min->y Z:bbox->min->z];
-								v1 = [[TVec3D alloc] initWithX:0 Y:bbox->max->y Z:bbox->min->z];
-								v2 = [[TVec3D alloc] initWithX:0 Y:bbox->max->y Z:bbox->max->z];
-								v3 = [[TVec3D alloc] initWithX:0 Y:bbox->min->y Z:bbox->max->z];
-								
-								v4 = [[TVec3D alloc] initWithX:-map->gridSz Y:bbox->min->y Z:bbox->min->z];
-								v5 = [[TVec3D alloc] initWithX:-map->gridSz Y:bbox->max->y Z:bbox->min->z];
-								v6 = [[TVec3D alloc] initWithX:-map->gridSz Y:bbox->max->y Z:bbox->max->z];
-								v7 = [[TVec3D alloc] initWithX:-map->gridSz Y:bbox->min->y Z:bbox->max->z];
-							}
-							break;
-						}
-						
-						[planes addObject:[[TPlane alloc] initFromTriangleA:v2 B:v1 C:v0]];
-						[planes addObject:[[TPlane alloc] initFromTriangleA:v5 B:v6 C:v7]];
-						[planes addObject:[[TPlane alloc] initFromTriangleA:v0 B:v1 C:v5]];
-						[planes addObject:[[TPlane alloc] initFromTriangleA:v1 B:v2 C:v6]];
-						[planes addObject:[[TPlane alloc] initFromTriangleA:v2 B:v3 C:v7]];
-						[planes addObject:[[TPlane alloc] initFromTriangleA:v3 B:v0 C:v4]];
-						
-						TEntity* entity = [map findEntityByClassName:@"worldspawn"];
-						TBrush* brush = [TBrush createBrushFromPlanes:planes MAP:map];
-						[entity->brushes addObject:brush];
-						
-						[map->historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_AddBrush Object:brush Owner:entity]];
-						
-						[map->selMgr unselectAll:TSC_Level];
-						[map->selMgr addSelection:brush];
-						
-						[map->historyMgr stopRecord];
 						
 						startPoint = nil;
 						endPoint = nil;

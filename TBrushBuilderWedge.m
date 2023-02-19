@@ -116,6 +116,8 @@
 	
 	[brush finalizeInternals];
 	
+	[InMAP markAllTexturesDirtyRenderArray];
+	
 	return brush;
 }
 

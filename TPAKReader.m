@@ -148,7 +148,6 @@
 		texture->width = mdlheader->skinwidth;
 		texture->height = mdlheader->skinheight;
 		texture->bShowInBrowser = NO;
-		texture->bHasMipMaps = NO;
 		[mdl->skinTextures addObject:texture];
 		
 		// Figure out which kind of skin this is (static or animated)
@@ -161,19 +160,21 @@
 		{
 			case 0:		// Static
 			{
-				texture->RGBBytesMips[0] = NSAllocateCollectable( skinsz * 3, NSScannedOption );
-				byte* RGBp = texture->RGBBytesMips[0];
+				texture->RGBBytes = (byte*)malloc( skinsz * 3 );
+				byte* RGBp = texture->RGBBytes;
 				
 				int p;
-				TGlobal* G = [TGlobal G];
 				
 				for( p = 0 ; p < skinsz ; ++p )
 				{
-					int paletteIdx = (*pos) * 3;
+					TVec3D* color = [[TGlobal G]->palette objectAtIndex:*pos];
 					
-					*RGBp = G->palette[ paletteIdx+0 ];	RGBp++;
-					*RGBp = G->palette[ paletteIdx+1 ];	RGBp++;
-					*RGBp = G->palette[ paletteIdx+2 ];	RGBp++;
+					*RGBp = (byte)color->x;
+					RGBp++;
+					*RGBp = (byte)color->y;
+					RGBp++;
+					*RGBp = (byte)color->z;
+					RGBp++;
 					
 					pos++;
 				}

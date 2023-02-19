@@ -7,18 +7,31 @@
 	
 	name = @"???";
 	width = height = 0;
-	RGBBytesMips[0] = nil;
-	RGBBytesMips[1] = nil;
-	RGBBytesMips[2] = nil;
-	RGBBytesMips[3] = nil;
+	RGBBytes = nil;
+	mipTex = nil;
 	texGLName = 0;
 	bShowInBrowser = YES;
 	pickName = nil;
-	bHasMipMaps = NO;
+	bDirtyRenderArray = YES;
 	
 	renderArray = nil;
 	
 	return self;
+}
+
+- (void)finalize
+{
+	if( RGBBytes != nil )
+	{
+		free( RGBBytes );
+	}
+
+	if( mipTex != nil )
+	{
+		free( mipTex );
+	}
+	
+	[super finalize];
 }
 
 -(void) pushPickName
@@ -61,20 +74,10 @@
 
 	[self bind];
 	
-	if( bHasMipMaps )
-	{
-		gluBuild2DMipmaps( GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_UNSIGNED_BYTE, RGBBytesMips[0] );
+	glTexImage2D( GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, RGBBytes );
 		
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	}
-	else
-	{
-		glTexImage2D( GL_TEXTURE_2D, 0, 3, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, RGBBytesMips[0] );
-		
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	}
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 }
 
 // Bind this texture to OpenGL in preperation for using it to draw with.

@@ -20,7 +20,7 @@
 
 -(void) draw:(MAPDocument*)InMAP SelectedState:(BOOL)InSelect
 {
-	if( [TGlobal G]->bDrawingPaused )
+	if( [TGlobal G]->drawingPausedRefCount > 0 )
 	{
 		return;
 	}
@@ -95,7 +95,7 @@
 			glVertex3f( XPos+TWidth, YPos, 0.0 );
 		}
 		glEnd();
-	
+		
 		if( THeight > TallestTexture )
 		{
 			TallestTexture = THeight;

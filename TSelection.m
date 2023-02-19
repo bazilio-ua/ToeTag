@@ -222,6 +222,29 @@
 	return entityClasses;
 }
 
+// Returns an array of all the selected brushes
+
+-(NSMutableArray*) getSelectedBrushes
+{
+	NSMutableArray* sels = [self getSelections:TSC_Level];
+	NSMutableArray* brushes = [NSMutableArray new];
+	
+	for( NSObject* O in sels )
+	{
+		if( [O isKindOfClass:[TBrush class]] )
+		{
+			TBrush* brush = (TBrush*)O;
+			
+			if( [brushes containsObject:brush] == NO )
+			{
+				[brushes addObject:brush];
+			}
+		}
+	}
+	
+	return brushes;
+}
+
 // Returns an array of all the unique entities that are selected
 
 -(NSMutableArray*) getSelectedEntities
@@ -240,6 +263,26 @@
 	}
 	
 	return entities;
+}
+
+// Marks the textures on selected entities as dirty render array
+
+-(void) markTexturesOnSelectedDirtyRenderArray
+{
+	NSMutableArray* sels = [self getSelections:TSC_Level];
+	
+	for( NSObject* O in sels )
+	{
+		TEntity* E = [map getEntityFor:O];
+
+		for( TBrush* B in E->brushes )
+		{
+			for( TFace* F in B->faces )
+			{
+				[map findTextureByName:F->textureName]->bDirtyRenderArray = YES;
+			}
+		}
+	}
 }
 
 @end

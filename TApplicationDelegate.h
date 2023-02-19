@@ -9,6 +9,7 @@
 	IBOutlet TOpenGLView* orthoViewport;
 	BOOL bCreateEntityMenuInitialized;
 	IBOutlet NSPanel* preferencesPanel;
+	IBOutlet NSPanel* dlgRenameTexture;
 }
 
 - (IBAction)onFileOpenPointFile:(id)sender;
@@ -19,6 +20,11 @@
 - (IBAction)onToolsTexturesOpen:(id)sender;
 - (IBAction)onToolsTexturesAppend:(id)sender;
 - (IBAction)onToolsTexturesSave:(id)sender;
+- (IBAction)onToolsTexturesImport:(id)sender;
+- (IBAction)onToolsTexturesImportWithFullbrights:(id)sender;
+- (IBAction)onToolsTexturesExport:(id)sender;
+- (IBAction)onToolsTexturesDelete:(id)sender;
+- (IBAction)onToolsTexturesRename:(id)sender;
 - (IBAction)onToolsTexturesSynchronizeBrowser:(id)sender;
 - (IBAction)onEditUndo:(id)sender;
 - (IBAction)onEditRedo:(id)sender;
@@ -26,12 +32,14 @@
 - (IBAction)onEditSelectMatching:(id)sender;
 - (IBAction)onEditSelectWholeEntity:(id)sender;
 - (IBAction)onEditDeselect:(id)sender;
+- (IBAction)onEditHideSelected:(id)sender;
+- (IBAction)onEditIsolateSelected:(id)sender;
+- (IBAction)onEditShowAll:(id)sender;
 - (IBAction)onCreateEntityItem:(id)sender;
 - (IBAction)onJoin:(id)sender;
 - (IBAction)onSplit:(id)sender;
 - (IBAction)OnToolsEntityQuickGroupCreate:(id)sender;
 - (IBAction)OnToolsEntityQuickGroupSelect:(id)sender;
--(void) selectQuickGroupID:(int)InQuickGroupID;
 - (IBAction)OnToolsEntityQuickGroupDelete:(id)sender;
 - (IBAction)onToolsCSGHollowSelected:(id)sender;
 - (IBAction)onToolsCSGCreateClipBrush:(id)sender;
@@ -42,6 +50,9 @@
 - (IBAction)onToolsCSGBevel:(id)sender;
 - (IBAction)onToolsCSGExtrude:(id)sender;
 - (IBAction)onToolsCSGSplit:(id)sender;
+- (IBAction)onToolsCSGTriangulateFan:(id)sender;
+- (IBAction)onToolsCSGTriangulateFromCenter:(id)sender;
+- (IBAction)onToolsCSGOptimize:(id)sender;
 - (IBAction)onToolsTransformMirrorX:(id)sender;
 - (IBAction)onToolsTransformMirrorY:(id)sender;
 - (IBAction)onToolsTransformMirrorZ:(id)sender;
@@ -50,8 +61,9 @@
 - (IBAction)OnEditQuantizeVerts:(id)sender;
 - (IBAction)OnToolsAutoTargetEntities:(id)sender;
 - (IBAction)OnToolsDropPathCorner:(id)sender;
-- (IBAction)OnToolsBrushImportTriangleMesh:(id)sender;
+- (IBAction)OnToolsCreateRoute:(id)sender;
 
+-(void) selectQuickGroupID:(int)InQuickGroupID;
 -(void) populateCreateEntityMenu:(MAPDocument*)InMAP;
 
 @end

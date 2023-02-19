@@ -34,6 +34,7 @@
 -(NSMutableArray*) getVertsNear:(TVec3D*)InVert;
 -(void) selectVertsNear:(TVec3D*)InVert MAP:(MAPDocument*)InMAP;
 -(TBrush*) carveBrushAgainstPlane:(TPlane*)InPlane MAP:(MAPDocument*)InMAP;
+-(void) generateCappingFace:(MAPDocument*)InMAP referencePlane:(TPlane*)InPlane;
 -(void) pushPickName;
 -(NSNumber*) getPickName;
 -(int) getQuickGroupID;
@@ -42,6 +43,7 @@
 -(BOOL) doesPlaneIntersect:(TPlane*)InPlane;
 -(BOOL) doesFaceIntersect:(TFace*)InFace;
 -(BOOL) isBehindOrOn:(TPlane*)InPlane;
+-(BOOL) isPointInside:(TVec3D*)InVtx;
 -(BOOL) doesBrushIntersect:(TBrush*)InBrush;
 -(TVec3D*) getVertexNormal:(TVec3D*)InVtx;
 -(NSMutableArray*) getFacesConnectedToVertex:(TVec3D*)InVtx;
@@ -51,5 +53,8 @@
 -(void) snapToUnitGrid;
 -(TFace*) findFaceWithMatchingEdge:(TEdge*)InEdge IgnoreFace:(TFace*)InIgnoreFace;
 -(BOOL) isConvex;
+-(NSMutableArray*) getUniqueVertices;
+-(NSMutableArray*) getUniqueFullEdges;
+-(void) markDirtyRenderArray;
 
 @end

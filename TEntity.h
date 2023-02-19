@@ -52,5 +52,6 @@
 -(TBBox*) getBoundingBox;
 -(void) drawSelectionHighlights:(MAPDocument*)InMAP;
 -(void) drawTargetLineBoxFrom:(TVec3D*)InFrom To:(TVec3D*)InTo Box:(TBBox*)InBox;
+-(void) markDirtyRenderArray;
 
 @end

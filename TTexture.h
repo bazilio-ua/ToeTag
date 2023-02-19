@@ -4,8 +4,7 @@
 @public
 	NSString* name;
 	NSInteger width, height;
-	byte* __strong RGBBytesMips[4];
-	BOOL bHasMipMaps;
+	byte* RGBBytes;
 	GLuint texGLName;
 	BOOL bShowInBrowser;			// NO means the texture is registered with all contexts, but isn't browsable
 	NSNumber* pickName;
@@ -17,7 +16,11 @@
 	float lastXPos, lastYPos;
 	
 	// Temp - used to optimize drawing of textured level views
+	BOOL bDirtyRenderArray;
 	TRenderArray* renderArray;
+	
+	// Temp - used when writing the texture out to a WAD
+	miptexheader_t* mipTex;
 }
 
 -(void) registerWithCurrentOpenGLContext;

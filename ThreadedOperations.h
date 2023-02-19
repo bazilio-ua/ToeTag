@@ -14,43 +14,14 @@
 
 // ------------------------------------------------------
 
-@interface NSOperationLoadTextureFromWAD : NSOperation
-{
-	miptexheader_t* mipTex;
-	byte* filepos;
-	MAPDocument* map;
-	TTexture* texture;
-}
-
--(id) initWithMipTex:(miptexheader_t*)InMipTex FilePos:(byte*)InFilePos Map:(MAPDocument*)InMap Texture:(TTexture*)InTexture;
-
-@end
-
-// ------------------------------------------------------
-
-@interface NSOperationLoadMDLIntoECRC : NSOperation
-{
-	TEntityClassRenderComponentMDL* ECRC;
-	TMDLTocEntry* TOCEntry;
-}
-
--(id) initWithECRC:(TEntityClassRenderComponentMDL*)InECRC TOCEntry:(TMDLTocEntry*)InTOCEntry;
-
-@end
-
-// ------------------------------------------------------
-
-// Don't delete this class as we will need to remember how to generate mipmaps when we allow importing of textures
-
-/*
 @interface NSOperationGenerateMipMaps : NSOperation
 {
 	TTexture* texture;
+	int dsize;
 }
 
--(id) initWithTexture:(TTexture*)InTexture;
+-(id) initWithTexture:(TTexture*)InTexture DiskSize:(int)InDiskSize;
 
 @end
-*/
 
 // ------------------------------------------------------

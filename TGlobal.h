@@ -13,7 +13,7 @@
 @interface TRenderArray : NSObject
 {
 @public
-	float* __strong data;		// The data blob (consists of verts, uvs, colors)
+	float* data;		// The data blob (consists of verts, uvs, colors)
 	int currentIdx;				// How many elements we current have in the data blob
 	int maxIdx;					// How many elements are currently allocated
 	
@@ -76,7 +76,7 @@
 	NSMutableArray* skinTextures;		// (TTexture*) The skins found in the MDL file
 	NSMutableArray* triangles;			// (TVec3D*) Contains XYZ coords as well as UVs in sets of 3 for each triangle
 	
-	float __strong *verts, __strong *uvs;
+	float *verts, *uvs;
 	int elementCount;					// The number of verts that are going to be passed to glDrawArrays
 	int primType;
 }
@@ -105,8 +105,8 @@
 @public
 	TVec3D* LevelRenderLightDir;
 	
-	// Drawing routines check this bool to see if they should do any rendering or not.
-	BOOL bDrawingPaused;
+	// Drawing routines check this var to see if they should do any rendering or not (> 1 == no drawing allowed).
+	int drawingPausedRefCount;
 	
 	// The last quick group ID that was used
 	int lastQuickGroupID;
@@ -126,9 +126,6 @@
 	// Table of contents for all PAK files in the Quake directory.  These will be loaded as they are
 	// requested by entity class render components.
 	NSMutableDictionary* MDLTableOfContents;
-	
-	// The Quake palette
-	byte palette[768];
 	
 	// Temp objects
 	TVec3D *colorWhite, *colorBlack, *colorLtGray, *colorMedGray, *colorDkGray, *colorSelectedBrush, *colorSelectedBrushHalf;
@@ -152,6 +149,14 @@
 	
 	// The pivot point for rotating entities
 	TVec3D* pivotLocation;
+
+	// Standard settings for all strings used via OpenGL
+	NSMutableDictionary* standardStringAttribs;
+
+	// The Quake palette
+	//byte palette[768];
+	//__strong byte* palette;
+	NSMutableArray* palette;
 }
 
 -(void) loadMDLTableOfContents;
@@ -161,7 +166,7 @@
 -(unsigned int) generateMRUClickCount;
 -(unsigned int) generateTargetID;
 -(void) cacheTextureFromResources:(NSString*)InName MAP:(MAPDocument*)InMAP;
--(byte) getBestPaletteIndexForR:(int)InR G:(int)InG B:(int)InB;
+-(byte) getBestPaletteIndexForR:(int)InR G:(int)InG B:(int)InB AllowFullbrights:(BOOL)InAllowFullbrights;
 
 +(TGlobal*) G;
 +(int) findClosestPowerOfTwo:(int)InValue;

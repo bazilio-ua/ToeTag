@@ -315,7 +315,7 @@
 	
 	for( TPlane* P in InClippingPlanes )
 	{
-		hugeBrush = [hugeBrush carveBrushAgainstPlane:P MAP:nil];
+		hugeBrush = [hugeBrush carveBrushAgainstPlane:P MAP:InMAP];
 	}
 	
 	// If a MAP document has been provided, do texture alignment before returning
@@ -328,7 +328,7 @@
 	return hugeBrush;
 }
 
-// Carves this brush against InPlane.  Returns a new brush representing whatever is behind InPlane.
+// Carves this brush against InPlane.  Returns a new brush representing whatever is behind InPlane, with a capping polygon added to cover any hole that may have been created.
 
 -(TBrush*) carveBrushAgainstPlane:(TPlane*)InPlane MAP:(MAPDocument*)InMAP
 {
@@ -339,7 +339,7 @@
 	for( TFace* F in faces )
 	{
 		TFace *front = nil, *back = nil;
-		int res = [F splitWithPlane:InPlane Front:&front Back:&back];
+		EFaceSplit res = [F splitWithPlane:InPlane Front:&front Back:&back];
 		
 		switch( res )
 		{
@@ -348,6 +348,11 @@
 				back->textureName = [F->textureName mutableCopy];
 				[clippedBrush->faces addObject:back];
 				bBrushWasClipped = YES;
+				
+				if( [InPlane->textureName length] == 0 )
+				{
+					[InPlane copyTexturingAttribsFrom:F];
+				}
 			}
 			break;
 				
@@ -358,37 +363,14 @@
 			break;
 		}
 	}
-		
+	
 	TBrush* srcBrush = [clippedBrush mutableCopy];
+
+	// The plane clipped this brush so we have to generate a capping face to cover the newly created hole.
 	
 	if( bBrushWasClipped )
 	{
-		// Now that we've clipped the brush against a plane, we need to create a giant face to cover the new hole
-		
-		TFace* capface = [InPlane getHugePolygon];
-		
-		// That giant face now needs to be clipped against the remaining faces in the brush (which are converted into planes for the clipping operation)
-		
-		for( TFace* F in srcBrush->faces )
-		{
-			TPlane* planeFromFace = [[TPlane alloc] initFromTriangleA:[F->verts objectAtIndex:2] B:[F->verts objectAtIndex:1] C:[F->verts objectAtIndex:0]];
-			TFace *front = nil, *back = nil;
-			
-			if( [capface splitWithPlane:planeFromFace Front:&front Back:&back] == TFS_Split )
-			{
-				capface = [back mutableCopy];
-
-				// If the cap still doesn't have a texture at this point, take it from the first
-				// face that gets split.
-				
-				if( [capface->textureName length] == 0 )
-				{
-					[capface copyTexturingAttribsFrom:F];
-				}
-			}
-		}
-		
-		[srcBrush->faces addObject:capface];
+		[srcBrush generateCappingFace:InMAP referencePlane:InPlane];
 	}
 	
 	// If a MAP document has been provided, do texture alignment before returning
@@ -399,6 +381,130 @@
 	}
 	
 	return srcBrush;
+}
+
+-(void) generateCappingFace:(MAPDocument*)InMAP referencePlane:(TPlane*)InPlane
+{
+	TFace* capface = nil;
+	
+	// Generate a list of edges that only have one face attached to them.
+	
+	NSMutableArray* rawUniqueEdges = [self getUniqueFullEdges];
+	NSMutableArray* uniqueEdges = [NSMutableArray new];
+	
+	for( TEdgeFull* FE in rawUniqueEdges )
+	{
+		int refcount = 0;
+		
+		for( TFace* F in faces )
+		{
+			if( [F containsFullEdge:FE] )
+			{
+				refcount++;
+			}
+		}
+		
+		if( refcount == 1 )
+		{
+			[uniqueEdges addObject:FE];
+		}
+	}
+	
+	// Create the capping face after connecting the unique edges in the proper order.
+	
+	NSMutableArray* connectedEdges = [NSMutableArray new];
+	
+	TEdgeFull* edge = [uniqueEdges objectAtIndex:0];
+	[connectedEdges addObject:edge];
+	[uniqueEdges removeObject:edge];
+	
+	TVec3D* comp = edge->verts[1];
+	int x;
+	
+	for( x = 0 ; x < [uniqueEdges count] ; ++x )
+	{
+		edge = [uniqueEdges objectAtIndex:x];
+		
+		if( [edge->verts[0] isAlmostEqualTo:comp] )
+		{
+			[connectedEdges addObject:[edge mutableCopy]];
+			
+			comp = edge->verts[1];
+			
+			x = -1;
+			[uniqueEdges removeObject:edge];
+		}
+		else if( [edge->verts[1] isAlmostEqualTo:comp] )
+		{
+			[edge swapVerts];
+			[connectedEdges addObject:[edge mutableCopy]];
+			
+			comp = edge->verts[1];
+			
+			x = -1;
+			[uniqueEdges removeObject:edge];
+		}
+	}
+
+	if( [connectedEdges count] > 2 )
+	{
+		capface = [TFace new];
+		
+		// Create the capping face from the connected edge list.
+		
+		for( TEdgeFull* E in connectedEdges )
+		{
+			[capface->verts addObject:[E->verts[0] mutableCopy]];
+		}
+		
+		// There is a chance that the capping face we created is turned the wrong way at this point.  Check each
+		// vert on the brush and see if any of them are on the wrong side of the plane.  If so, then we need to flip the face
+		// over before adding it to the brush.
+		
+		TPlane* plane = [capface getPlane];
+		
+		BOOL bFlipFace = NO;
+		
+		for( TFace* F in faces )
+		{
+			for( TVec3D* V in F->verts )
+			{
+				if( [plane getVertexSide:V] == S_Behind )
+				{
+					bFlipFace = YES;
+					break;
+				}
+			}
+			
+			if( bFlipFace == YES )
+			{
+				[capface reverseVerts];
+				break;
+			}
+		}
+		
+		// Copy the texturing info from the clipping plane onto the capping face.
+		
+		capface->textureName = [InPlane->textureName mutableCopy];
+		capface->uoffset = InPlane->uoffset;
+		capface->voffset = InPlane->voffset;
+		capface->rotation = InPlane->rotation;
+		capface->uscale = InPlane->uscale;
+		capface->vscale = InPlane->vscale;
+		
+		// If the plane didn't have texturing info, use the currently selected texture in the browser.
+		
+		if( [capface->textureName length] == 0 && InMAP != nil )
+		{
+			capface->textureName = [[InMAP->selMgr getSelectedTextureName] mutableCopy];
+		}
+	}
+
+	if( capface != nil )
+	{
+		[capface generateTexCoords:InMAP];
+		[faces addObject:capface];
+	}
 }
 
 // Returns a string that represents this entity in Quake MAP text format.  This is the
@@ -569,6 +675,19 @@
 			{
 				return NO;
 			}
+		}
+	}
+	
+	return YES;
+}
+
+-(BOOL) isPointInside:(TVec3D*)InVtx
+{
+	for( TFace* F in faces )
+	{
+		if( [[F getPlane] getVertexSide:InVtx] == S_Front )
+		{
+			return NO;
 		}
 	}
 	
@@ -747,6 +866,78 @@
 	}
 	
 	return YES;
+}
+
+// Returns an array of the unique vertices in this brush as a vertex cloud;
+
+-(NSMutableArray*) getUniqueVertices
+{
+	NSMutableArray* vertexCloud = [NSMutableArray new];
+
+	for( TFace* F in faces )
+	{
+		for( TVec3D* V in F->verts )
+		{
+			BOOL bIsInCloud = NO;
+			
+			for( TVec3D* VV in vertexCloud )
+			{
+				if( [VV isAlmostEqualTo:V] )
+				{
+					bIsInCloud = YES;
+					break;
+				}
+			}
+			
+			if( bIsInCloud == NO )
+			{
+				[vertexCloud addObject:[V mutableCopy]];
+			}
+		}
+	}
+	
+	return vertexCloud;
+}
+
+-(NSMutableArray*) getUniqueFullEdges
+{
+	NSMutableArray* uniqueEdges = [NSMutableArray new];
+	
+	for( TFace* F in faces )
+	{
+		[F finalizeInternals];
+		
+		for( TEdge* G in F->edges )
+		{
+			BOOL bAlreadyInArray = NO;
+			
+			TEdgeFull* FG = [[TEdgeFull alloc] initWithVert0:[F->verts objectAtIndex:G->verts[0]] Vert1:[F->verts objectAtIndex:G->verts[1]]];
+			
+			for( TEdgeFull* GG in uniqueEdges )
+			{
+				if( [GG isEqual:FG] )
+				{
+					bAlreadyInArray = YES;
+					break;
+				}
+			}
+			
+			if( bAlreadyInArray == NO )
+			{
+				[uniqueEdges addObject:FG];
+			}
+		}
+	}
+	
+	return uniqueEdges;
+}
+
+-(void) markDirtyRenderArray
+{
+	for( TFace* F in faces )
+	{
+		[[TGlobal getMAP] findTextureByName:F->textureName]->bDirtyRenderArray = YES;
+	}
 }
 
 @end

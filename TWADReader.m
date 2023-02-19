@@ -49,6 +49,8 @@
 
 @end
 
+#pragma optimization_level 0
+
 @implementation TWADReader
 
 -(BOOL) loadFile:(NSString*)InFilename Map:(MAPDocument*)InMap
@@ -89,8 +91,16 @@
 	
 	// Read each entry
 	
+	TFileReader* paletteReader = [TFileReader new];
+	[paletteReader openFileFromResources:@"QuakePalette.lmp"];
+	
+	NSData* paletteData = [paletteReader->fileHandle readDataToEndOfFile];
+	byte palettedata[768];
+	[paletteData getBytes:palettedata length:768];
+	
+	[paletteReader closeFile];
+	
 	int e;
-	NSOperationQueue* queue = [NSOperationQueue new];
 	
 	for( e = 0 ; e < WADHeader->numentries ; ++e )
 	{
@@ -103,13 +113,6 @@
 				byte* filePos = headOfFile + WADEntries[e].filepos;
 				miptexheader_t* miptex = (miptexheader_t*)filePos;
 				
-				// If a texture by this name is already loaded, skip it.
-				
-				if( [InMap doesTextureExist:[NSString stringWithCString:miptex->name encoding:NSUTF8StringEncoding]] == YES )
-				{
-					continue;
-				}
-				
 				SWAPINT32( miptex->height );
 				SWAPINT32( miptex->width );
 				SWAPINT32( miptex->offsets[0] );
@@ -117,27 +120,54 @@
 				SWAPINT32( miptex->offsets[2] );
 				SWAPINT32( miptex->offsets[3] );
 				
+				// If this texture name already exists, skip it.  Otherwise we end up with duplicates being loaded (the same texture in memory more than once).
+				
+				if( [InMap doesTextureExist:[NSString stringWithCString:miptex->name encoding:NSUTF8StringEncoding]] )
+				{
+					continue;
+				}
+				
 				TTexture* T = [TTexture new];
 				T->name = [NSString stringWithCString:miptex->name encoding:NSUTF8StringEncoding];
 				T->width = miptex->width;
 				T->height = miptex->height;
 				
-				T->bHasMipMaps = YES;
+				T->RGBBytes = (byte*)malloc( (T->width * T->height) * 3 );
 				
-				T->RGBBytesMips[0] = NSAllocateCollectable( ((T->width * T->height) * 3) / 1, NSScannedOption );
-				T->RGBBytesMips[1] = NSAllocateCollectable( ((T->width * T->height) * 3) / 2, NSScannedOption );
-				T->RGBBytesMips[2] = NSAllocateCollectable( ((T->width * T->height) * 3) / 4, NSScannedOption );
-				T->RGBBytesMips[3] = NSAllocateCollectable( ((T->width * T->height) * 3) / 8, NSScannedOption );
+				//-----------------------
+				
+				int sz, x, palidx;
+				byte R, G, B;
+				
+				byte* colorIndices = filePos + miptex->offsets[0];
+				byte* RGBp = T->RGBBytes;
+				
+				sz = T->width * T->height;
+				
+				NSLog( @"Reading texture : %@ - %d x %d", T->name, T->width, T->height );
+				
+				for( x = 0 ; x < sz ; ++x )
+				{
+					palidx = colorIndices[x] * 3;
+					
+					assert( palidx > -1 && palidx < 768 );
+					
+					//NSLog( @"%u", colorIndices[x] );
+					
+					R = palettedata[ palidx ];
+					G = palettedata[ palidx+1 ];
+					B = palettedata[ palidx+2 ];
+					
+					*RGBp = R;	RGBp++;
+					*RGBp = G;	RGBp++;
+					*RGBp = B;	RGBp++;
+				}
 				
 				[InMap->texturesFromWADs addObject:T];
-				
-				[queue addOperation:[[NSOperationLoadTextureFromWAD alloc] initWithMipTex:miptex FilePos:filePos Map:InMap Texture:T]];
 			}
 			break;
 		}
 	}
-	
-	[queue waitUntilAllOperationsAreFinished];
 	
 	[self closeFile];
 	
@@ -148,3 +178,5 @@
 }
 
 @end
+
+#pragma optimization_level reset

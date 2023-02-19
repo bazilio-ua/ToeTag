@@ -21,7 +21,7 @@
 
 -(void) draw:(MAPDocument*)InMAP SelectedState:(BOOL)InSelect
 {
-	if( [TGlobal G]->bDrawingPaused )
+	if( [TGlobal G]->drawingPausedRefCount > 0 )
 	{
 		return;
 	}

@@ -17,25 +17,30 @@
 
 -(void) draw:(MAPDocument*)InMAP SelectedState:(BOOL)InSelect
 {
-	if( [TGlobal G]->bDrawingPaused )
+	if( [TGlobal G]->drawingPausedRefCount > 0 )
 	{
 		return;
 	}
 
 	glEnable( GL_TEXTURE_2D );
 	
-	// Mark all textures as not "in use" before drawing the world.
-	
 	if( !InSelect )
 	{
+		// Mark all textures as not "in use" before drawing the world.
+		
 		[TGlobal G]->bTrackingTextureUsage = YES;
 		
 		for( TTexture* T in InMAP->texturesFromWADs )
 		{
-			[T->renderArray resetToStart];
+			if( T->bDirtyRenderArray )
+			{
+				[T->renderArray resetToStart];
+			}
 			
 			T->bInUse = NO;
 		}
+		
+		// Fill up render arrays for each texture
 		
 		TVec3D *v0, *v1, *v2;
 		
@@ -47,7 +52,7 @@
 				{
 					TTexture* T = [InMAP findTextureByName:F->textureName];
 					
-					if( T )
+					if( T && T->bDirtyRenderArray )
 					{
 						if( !InMAP->bShowEditorOnlyEntities && [[T->name lowercaseString] isEqualToString:@"clip"] )
 						{
@@ -85,6 +90,11 @@
 					}
 				}
 			}
+		}
+		
+		for( TTexture* T in InMAP->texturesFromWADs )
+		{
+			T->bDirtyRenderArray = NO;
 		}
 		
 		// Draw the polygons representing the world

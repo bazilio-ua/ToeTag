@@ -170,6 +170,7 @@
 
 	glLineWidth( 2.0 );
 	glDisable( GL_CULL_FACE );
+	glDisable( GL_TEXTURE_2D );
 	
 	// Draw the wireframe
 	
@@ -214,6 +215,7 @@
 	}
 	glEnd();
 	
+	glEnable( GL_TEXTURE_2D );
 	glEnable( GL_CULL_FACE );
 	glLineWidth( 1.0 );
 }
@@ -253,6 +255,7 @@
 	// Draw the wireframe
 	
 	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	glDisable( GL_TEXTURE_2D );
 	
 	glBegin( GL_QUADS );
 	{
@@ -284,6 +287,7 @@
 	}
 	glEnd();
 	
+	glEnable( GL_TEXTURE_2D );
 	glLineWidth( 1.0 );
 }
 

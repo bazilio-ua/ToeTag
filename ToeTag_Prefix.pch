@@ -19,6 +19,11 @@
 #define PICK_AREA_SZ					8.0f
 #define POINT_SZ						8.0f
 
+// The max number of textures you can have in a WAD file.  This is necessary because the
+// WAD writing code doesn't like to dynamically allocate memory.
+
+#define MAX_WAD_ENTRIES					2048
+
 // Byte swap routines for handling data going to/from big endian systems (PowerPC)
 
 #define SWAPINT32(a)			a = CFSwapInt32LittleToHost( a )
@@ -86,7 +91,7 @@ typedef enum
 	TMA_DragSelection,
 	TMA_RotateSelection,
 	TMA_SetClipPoints,
-	TMA_CreateBrush,
+	TMA_BoxSelection,
 	TMA_SetPivotLocation,
 } EMouseAction;
 
@@ -149,6 +154,11 @@ typedef enum
 
 @class TFace;
 
+#import <OpenGL/gl.h>
+#import <OpenGL/glext.h>
+#import <OpenGL/OpenGL.h>
+#import <OpenGL/CGLContext.h>
+
 #import "QDataTypes.h"
 #import "TGlobal.h"
 
@@ -161,6 +171,8 @@ typedef enum
 #import "TEntityInspectorDelegate.h"
 #import "TPreferencesPanelDelegate.h"
 #import "TBuildInspectorDelegate.h"
+
+#import "TDlgRenameDelegate.h"
 
 #import "TPlane.h"
 
@@ -187,6 +199,7 @@ typedef enum
 #import "TTriangleMesh.h"
 #import "TFace.h"
 #import "TEdge.h"
+#import "TEdgeFull.h"
 #import "TVec3D.h"
 #import "TEntity.h"
 #import "TTexture.h"

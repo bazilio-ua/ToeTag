@@ -155,6 +155,227 @@
 	}
 }
 
+- (IBAction)onToolsTexturesImport:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	NSArray *fileTypes = [NSImage imageFileTypes];
+	
+	NSOpenPanel* oPanel = [NSOpenPanel openPanel];
+	
+	[oPanel setCanChooseDirectories:NO];
+	[oPanel setCanChooseFiles:YES];
+	[oPanel setAllowsMultipleSelection:YES];
+	[oPanel setAlphaValue:0.95];
+	[oPanel setTitle:@"Select files to import"];
+	
+	if( [oPanel runModalForDirectory:nil file:nil types:fileTypes] == NSOKButton )
+	{
+		NSArray* files = [oPanel filenames];
+		
+		for( NSString *filename in files )
+		{
+			NSImage* img = [[NSImage alloc] initWithContentsOfFile:filename];
+			NSData *tiff_data = [[NSData alloc] initWithData:[img TIFFRepresentation]];
+			NSBitmapImageRep *bitmap = [[NSBitmapImageRep alloc] initWithData:tiff_data];
+			
+			NSString* textureName = [[[filename lastPathComponent] stringByDeletingPathExtension] uppercaseString];
+			
+			// If this texture name is longer than 16 characters, we can't use it.
+			if( [textureName length] > 16 )
+			{
+				NSString* err = [NSString stringWithFormat:@"The texture '%@'s name is too long so it can't be imported.  Quake can only handle texture names that are 8 characters or less.", textureName ];
+				NSBeginAlertSheet(@"ToeTag", @"OK", nil, nil, preferencesPanel, nil, nil, nil, nil, err);
+				continue;
+			}
+			
+			TTexture* texture = [TTexture new];
+			texture->name = [textureName mutableCopy];
+			
+			// If this texture already exists, remove it from the WAD before adding a new version
+			[map removeTextureByName:texture->name];
+			
+			texture->bShowInBrowser = YES;
+			texture->width = [[img bestRepresentationForDevice:nil] pixelsWide];
+			texture->height = [[img bestRepresentationForDevice:nil] pixelsHigh];
+			texture->RGBBytes = (byte*)malloc( (texture->width * texture->height) * 3 );
+			
+			int w, h;
+			NSColor* color;
+			for( w = 0 ; w < texture->width ; ++w )
+			{
+				for( h = 0 ; h < texture->height ; ++h )
+				{
+					int idx = ((h * texture->width) + w) * 3;
+					byte* rgb = texture->RGBBytes + idx;
+					
+					color = [bitmap colorAtX:w y:h];
+					
+					int palidx = [[TGlobal G] getBestPaletteIndexForR:(byte)([color redComponent] * 255) G:(byte)([color greenComponent] * 255) B:(byte)([color blueComponent] * 255) AllowFullbrights:NO];
+					TVec3D* clr = [[TGlobal G]->palette objectAtIndex:palidx];
+					
+					*rgb = (byte)clr->x;
+					*(rgb + 1) = (byte)clr->y;
+					*(rgb + 2) = (byte)clr->z;
+				}
+			}
+			
+			[map->texturesFromWADs addObject:texture];
+		}
+	}
+	
+	[map registerTexturesWithViewports:NO];
+	
+	[map redrawTextureViewports];
+	[map redrawTextureViewports];
+}
+
+- (IBAction)onToolsTexturesImportWithFullbrights:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	NSArray *fileTypes = [NSImage imageFileTypes];
+	
+	NSOpenPanel* oPanel = [NSOpenPanel openPanel];
+	
+	[oPanel setCanChooseDirectories:NO];
+	[oPanel setCanChooseFiles:YES];
+	[oPanel setAllowsMultipleSelection:YES];
+	[oPanel setAlphaValue:0.95];
+	[oPanel setTitle:@"Select files to import"];
+	
+	if( [oPanel runModalForDirectory:nil file:nil types:fileTypes] == NSOKButton )
+	{
+		NSArray* files = [oPanel filenames];
+		
+		for( NSString *filename in files )
+		{
+			NSImage* img = [[NSImage alloc] initWithContentsOfFile:filename];
+			NSData *tiff_data = [[NSData alloc] initWithData:[img TIFFRepresentation]];
+			NSBitmapImageRep *bitmap = [[NSBitmapImageRep alloc] initWithData:tiff_data];
+			
+			NSString* textureName = [[[filename lastPathComponent] stringByDeletingPathExtension] uppercaseString];
+			
+			// If this texture name is longer than 16 characters, we can't use it.
+			if( [textureName length] > 16 )
+			{
+				NSString* err = [NSString stringWithFormat:@"The texture '%@'s name is too long so it can't be imported.  Quake can only handle texture names that are 8 characters or less.", textureName ];
+				NSBeginAlertSheet(@"ToeTag", @"OK", nil, nil, preferencesPanel, nil, nil, nil, nil, err);
+				continue;
+			}
+			
+			TTexture* texture = [TTexture new];
+			texture->name = [textureName mutableCopy];
+			
+			// If this texture already exists, remove it from the WAD before adding a new version
+			[map removeTextureByName:texture->name];
+			
+			texture->bShowInBrowser = YES;
+			texture->width = [[img bestRepresentationForDevice:nil] pixelsWide];
+			texture->height = [[img bestRepresentationForDevice:nil] pixelsHigh];
+			texture->RGBBytes = (byte*)malloc( (texture->width * texture->height) * 3 );
+			
+			int w, h;
+			NSColor* color;
+			for( w = 0 ; w < texture->width ; ++w )
+			{
+				for( h = 0 ; h < texture->height ; ++h )
+				{
+					int idx = ((h * texture->width) + w) * 3;
+					byte* rgb = texture->RGBBytes + idx;
+					
+					color = [bitmap colorAtX:w y:h];
+					
+					int palidx = [[TGlobal G] getBestPaletteIndexForR:(byte)([color redComponent] * 255) G:(byte)([color greenComponent] * 255) B:(byte)([color blueComponent] * 255) AllowFullbrights:YES];
+					TVec3D* clr = [[TGlobal G]->palette objectAtIndex:palidx];
+					
+					*rgb = (byte)clr->x;
+					*(rgb + 1) = (byte)clr->y;
+					*(rgb + 2) = (byte)clr->z;
+				}
+			}
+			
+			[map->texturesFromWADs addObject:texture];
+		}
+	}
+	
+	[map registerTexturesWithViewports:NO];
+	
+	[map redrawTextureViewports];
+	[map redrawTextureViewports];
+}
+
+- (IBAction)onToolsTexturesExport:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	NSArray *fileTypes = [NSArray arrayWithObjects:@"png", nil];
+	
+	TTexture* T = [map findTextureByName:[map->selMgr getSelectedTextureName]];
+	
+	NSSavePanel* sPanel = [NSSavePanel savePanel];
+	[sPanel setAllowedFileTypes:fileTypes];
+	[sPanel setAlphaValue:0.95];
+	[sPanel setTitle:@"Select a filename to export to"];
+	
+	if( [sPanel runModalForDirectory:nil file:T->name] == NSFileHandlingPanelOKButton )
+	{
+		NSBitmapImageRep* imgrep = [[NSBitmapImageRep alloc]
+									initWithBitmapDataPlanes:NULL
+									pixelsWide:T->width
+									pixelsHigh:T->height
+									bitsPerSample:8
+									samplesPerPixel:3
+									hasAlpha:NO
+									isPlanar:NO
+									colorSpaceName:NSDeviceRGBColorSpace
+									bytesPerRow:0
+									bitsPerPixel:0];
+		
+		byte* dst = [imgrep bitmapData];
+		memcpy( dst, T->RGBBytes, (T->width * T->height) * 3 );
+		
+		NSImage* img = [[NSImage alloc] initWithSize:NSMakeSize( T->width, T->height )];
+		[img addRepresentation:imgrep];
+		
+		NSArray* representations = [img representations];
+		NSData* bitmapData = [NSBitmapImageRep representationOfImageRepsInArray:representations usingType:NSPNGFileType properties:nil];
+		[bitmapData writeToFile:[sPanel filename] atomically:YES];
+	}
+}
+
+- (IBAction)onToolsTexturesDelete:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	
+	TTexture* T = [map findTextureByName:[map->selMgr getSelectedTextureName]];
+	
+	if( T )
+	{
+		[map->texturesFromWADs removeObject:T];
+	}
+	
+	[map registerTexturesWithViewports:NO];
+	
+	[map redrawTextureViewports];
+}
+
+- (IBAction)onToolsTexturesRename:(id)sender
+{
+	// Look for currently selected texture and put it's name into the text field
+	
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	
+	TDlgRenameDelegate* delegate = [dlgRenameTexture delegate];
+	
+	delegate->texture = [map findTextureByName:[map->selMgr getSelectedTextureName]];
+	
+	if( delegate->texture )
+	{
+		[delegate->nameTextField setStringValue:delegate->texture->name];
+	
+		MAPWindow* mapwindow = (MAPWindow*)[map windowForSheet];
+		[NSApp beginSheet:dlgRenameTexture modalForWindow:mapwindow modalDelegate:self didEndSelector:NULL contextInfo:nil];
+	}
+}
+
 - (IBAction)onEditUndo:(id)sender
 {
 	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
@@ -209,6 +430,24 @@
 	
 	[map redrawLevelViewports];
 	[map refreshInspectors];
+}
+
+- (IBAction)onEditHideSelected:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	[map hideSelected];
+}
+
+- (IBAction)onEditIsolateSelected:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	[map isolateSelected];
+}
+
+- (IBAction)onEditShowAll:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	[map showAll];
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)item
@@ -431,6 +670,24 @@
 	[map csgSplit];
 }
 
+- (IBAction)onToolsCSGTriangulateFan:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	[map csgTriangulateFan];
+}
+
+- (IBAction)onToolsCSGTriangulateFromCenter:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	[map csgTriangulateFromCenter];
+}
+
+- (IBAction)onToolsCSGOptimize:(id)sender
+{
+	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
+	[map csgOptimize];
+}
+
 - (IBAction)onToolsTransformMirrorX:(id)sender
 {
 	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
@@ -549,50 +806,42 @@
 	[map redrawLevelViewports];
 }
 
-- (IBAction)OnToolsBrushImportTriangleMesh:(id)sender
+- (IBAction)OnToolsCreateRoute:(id)sender
 {
 	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
-	TEntity* entity = [map findBestSelectedBrushBasedEntity];
-	NSArray *fileTypes = [NSArray arrayWithObjects:@"stl", @"obj", nil];
-	TSTLReader* STLReader = [TSTLReader new];
-	TOBJReader* OBJReader = [TOBJReader new];
+	//[map->historyMgr startRecord:@"Create Route"];
 	
-	NSOpenPanel* oPanel = [NSOpenPanel openPanel];
+	NSMutableArray* selections = [map->selMgr getSelectedEntities];
 	
-	[oPanel setCanChooseDirectories:NO];
-	[oPanel setCanChooseFiles:YES];
-	[oPanel setAllowsMultipleSelection:YES];
-	[oPanel setAlphaValue:0.95];
-	[oPanel setTitle:@"Select a file to import"];
+	NSMutableArray* pathCorners = [NSMutableArray new];
+	TEntity* firstPathCorner = nil;
 	
-	[map->historyMgr startRecord:@"Import Brush"];
-	
-	if( [oPanel runModalForDirectory:nil file:nil types:fileTypes] == NSOKButton )
+	for( TEntity* E in selections )
 	{
-		NSArray* files = [oPanel filenames];
-		
-		for( NSString *filename in files )
+		if( [E->entityClass->name isEqualToString:@"path_corner"] )
 		{
-			TPolyMesh* mesh = [TPolyMesh new];
-			
-			if( [[[filename uppercaseString] pathExtension] isEqualToString:@"STL"] )
+			if( firstPathCorner == nil )
 			{
-				[STLReader loadFile:filename MAP:map TriangleMesh:mesh];
-			}
-			else
-			{
-				[OBJReader loadFile:filename MAP:map TriangleMesh:mesh];
+				firstPathCorner = E;
 			}
 			
-			[map->historyMgr addAction:[[THistoryAction alloc] initWithType:TUAT_AddBrush Object:mesh Owner:entity]];
-			[entity->brushes addObject:mesh];
+			[pathCorners addObject:E];
 		}
 	}
 	
-	[map->historyMgr stopRecord];
+	int e;
+	for( e = 0 ; e < [pathCorners count] ; ++e )
+	{
+		TEntity* E0 = [pathCorners objectAtIndex:e];
+		TEntity* E1 = [pathCorners objectAtIndex:(e+1)%[pathCorners count]];
+
+		NSString* target = [NSString stringWithFormat:@"T_%d", [[TGlobal G] generateTargetID]];
+		[E0->keyvalues setObject:[target mutableCopy] forKey:@"target"];
+		[E1->keyvalues setObject:[target mutableCopy] forKey:@"targetname"];
+	}
 	
-	[map redrawTextureViewports];
-	[map redrawTextureViewports];
+	//[map->historyMgr stopRecord];
+	[map redrawLevelViewports];
 }
 
 -(void) populateCreateEntityMenu:(MAPDocument*)InMAP

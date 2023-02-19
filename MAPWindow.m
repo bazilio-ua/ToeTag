@@ -73,73 +73,19 @@
 - (IBAction)onHideSelected:(id)sender
 {
 	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
-	[map->historyMgr startRecord:@"Hide Selected"];
-	
-	for( TEntity* E in map->entities )
-	{
-		if( [map->selMgr isSelected:E] )
-		{
-			[map->visMgr hide:E];
-		}
-		
-		for( TBrush* B in E->brushes )
-		{
-			if( [map->selMgr isSelected:B] )
-			{
-				[map->visMgr hide:B];
-			}
-		}
-	}
-	
-	[map refreshInspectors];
-	[map redrawLevelViewports];
-	
-	[map->historyMgr stopRecord];
+	[map hideSelected];
 }
 
 - (IBAction)onIsolate:(id)sender
 {
 	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
-	[map->historyMgr startRecord:@"Isolate"];
-	
-	[map->visMgr showAll];
-	
-	for( TEntity* E in map->entities )
-	{
-		if( [E isPointEntity] == YES )
-		{
-			if( [map->selMgr isSelected:E] == NO )
-			{
-				[map->visMgr hide:E];
-			}
-		}
-		else
-		{
-			for( TBrush* B in E->brushes )
-			{
-				if( [map->selMgr isSelected:B] == NO )
-				{
-					[map->visMgr hide:B];
-				}
-			}
-		}
-	}
-	
-	[map refreshInspectors];
-	[map redrawLevelViewports];
-	
-	[map->historyMgr stopRecord];
+	[map isolateSelected];
 }
 
 - (IBAction)onShowAll:(id)sender
 {
 	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
-	[map->historyMgr startRecord:@"Show All"];
-	
-	[map->visMgr showAll];
-	
-	[map redrawLevelViewports];
-	[map->historyMgr stopRecord];
+	[map showAll];
 }
 
 - (IBAction)onRebuildOption:(id)sender
@@ -277,6 +223,7 @@
 {
 	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
 	map->bShowEditorOnlyEntities = !map->bShowEditorOnlyEntities;
+	[map markAllTexturesDirtyRenderArray];
 	[map redrawLevelViewports];
 }
 
@@ -441,7 +388,7 @@
 -(void) buildBrush:(TBrushBuilder*)InBrushBuilder Args:(NSArray*)InArgs
 {
 	MAPDocument* map = [[NSDocumentController sharedDocumentController] currentDocument];
-	[map registerTexturesWithViewports];
+	[map registerTexturesWithViewports:NO];
 	
 	[map->historyMgr startRecord:@"Brush Builder"];
 	

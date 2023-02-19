@@ -29,6 +29,7 @@
 	glRotatef( X, 1, 0, 0 );
 	glRotatef( Y, 0, 1, 0 );
 	
+	glDisable( GL_TEXTURE_2D );
 	glLineWidth( 3.0f );
 	glColor3f( 1, 1, 1 );
 	
@@ -55,6 +56,7 @@
 	glRotatef( -Y, 0, 1, 0 );
 
 	glLineWidth( 1.0f );
+	glEnable( GL_TEXTURE_2D );
 }
 
 @end

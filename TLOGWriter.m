@@ -52,6 +52,8 @@ void LOG( NSString *format, ... )
 	
 	[GLog->fileHandle writeData:[string dataUsingEncoding:NSUTF8StringEncoding]];
 	[GLog->fileHandle synchronizeFile];
+	
+	NSLog( @"LOG : %@", string );
 }
 
 void WARN( NSString *format, ... )
@@ -79,6 +81,8 @@ void WARN( NSString *format, ... )
 	
 	[GLog->fileHandle writeData:[string dataUsingEncoding:NSUTF8StringEncoding]];
 	[GLog->fileHandle synchronizeFile];
+
+	NSLog( @"WARN : %@", string );
 }
 
 void ERROR( NSString *format, ... )
@@ -106,4 +110,6 @@ void ERROR( NSString *format, ... )
 	
 	[GLog->fileHandle writeData:[string dataUsingEncoding:NSUTF8StringEncoding]];
 	[GLog->fileHandle synchronizeFile];
+
+	NSLog( @"ERROR : %@", string );
 }

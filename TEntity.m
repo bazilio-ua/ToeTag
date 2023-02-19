@@ -133,10 +133,15 @@
 			{
 				for( TBrush* B in [self _visibleBrushes:InMAP] )
 				{
-					[B pushPickName];
-					
 					for( TFace* F in B->faces )
 					{
+						if( !InMAP->bShowEditorOnlyEntities && [[F->textureName lowercaseString] isEqualToString:@"clip"] )
+						{
+							continue;
+						}
+						
+						[B pushPickName];
+						
 						glBegin( GL_TRIANGLE_FAN );
 						{
 							for( TVec3D* V in F->verts )
@@ -145,9 +150,9 @@
 							}
 						}
 						glEnd();
+						
+						glPopName();
 					}
-					
-					glPopName();
 				}
 			}
 		}
@@ -161,6 +166,11 @@
 				
 				for( TFace* F in B->faces )
 				{
+					if( !InMAP->bShowEditorOnlyEntities && [[F->textureName lowercaseString] isEqualToString:@"clip"] )
+					{
+						continue;
+					}
+					
 					[F pushPickName];
 					
 					glBegin( GL_TRIANGLE_FAN );
@@ -588,6 +598,14 @@
 	// Sort all other entities normally
 	
 	return [entityClass->name caseInsensitiveCompare:InEntity->entityClass->name];
+}
+
+-(void) markDirtyRenderArray
+{
+	for( TBrush* B in brushes )
+	{
+		[B markDirtyRenderArray];
+	}
 }
 
 @end

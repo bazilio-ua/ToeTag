@@ -3,6 +3,7 @@
 @class TPlane;
 @class TTexture;
 @class MAPDocument;
+@class TEdgeFull;
 
 // A clockwise winding of points.
 
@@ -10,6 +11,7 @@
 {
 @public
 	NSString* textureName;
+	
 	int uoffset, voffset, rotation;
 	float uscale, vscale;
 	
@@ -40,8 +42,14 @@
 -(void) computeArea;
 -(TVec3D*) getCenter;
 -(TFace*) flip;
+-(TFace*) reverseVerts;
 -(void) copyTexturingAttribsFrom:(TFace*)InFace;
 -(void) maintainTextureLockAfterDrag:(TVec3D*)InDelta;
 -(TPlane*) getPlane;
+-(int) getVertIdx:(TVec3D*)InV;
+-(BOOL) containsFullEdge:(TEdgeFull*)InFullEdge;
+-(void) markDirtyRenderArray;
+
+@property (readwrite,copy) NSString* textureName;
 
 @end

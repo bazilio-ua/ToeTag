@@ -32,8 +32,6 @@
 	
 -(void) loadFromFileHandle:(MAPDocument*)InMAP
 {
-	NSOperationQueue* queue = [NSOperationQueue new];
-	
 	NSData* data = [fileHandle readDataToEndOfFile];
 	NSString* fileContents = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 	NSArray* fileLines = [fileContents componentsSeparatedByString:@"\n"];
@@ -110,7 +108,9 @@
 				
 				ECRC->skinIdx = [[subchunks objectAtIndex:1] intValue];
 				
-				[queue addOperation:[[NSOperationLoadMDLIntoECRC alloc] initWithECRC:ECRC TOCEntry:tocentry]];
+				TPAKReader* reader = [TPAKReader new];
+				ECRC->model = [reader loadMDL:tocentry->PAKFilename Offset:tocentry->offset Size:tocentry->sz];
+				[ECRC->model finalizeInternals];
 				 
 				[entityClass->renderComponenents addObject:ECRC];
 			}
@@ -146,8 +146,6 @@
 	}
 
 	[self closeFile];
-	
-	[queue waitUntilAllOperationsAreFinished];
 }
 
 @end

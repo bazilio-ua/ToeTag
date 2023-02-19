@@ -98,6 +98,12 @@
 	
 	// Flags for knowing when to refresh render data
 	BOOL bLevelGeometryIsDirty;
+	
+	// The WAD to load when the map loading is finished.
+	NSString* pendingWADName;
+	
+	// The last WAD that was loaded.  Prevents multiple loads of the same WAD.
+	NSString* lastLoadedWADName;
 }
 
 -(NSMutableArray*) _visibleEntities;
@@ -115,6 +121,7 @@
 -(id) findObjectByPickName:(NSNumber*)InPickName;
 -(TVec3D*) getLocationForPickName:(NSNumber*)InPickName;
 -(TTexture*) findTextureByName:(NSString*)InName;
+-(void) removeTextureByName:(NSString*)InName;
 -(void) sortTexturesBySize;
 -(void) clearLoadedTextures;
 -(BOOL) loadWAD:(NSString*)InName;
@@ -122,7 +129,7 @@
 -(void) saveWADFullPath:(NSString*)InFilename;
 -(void) redrawLevelViewports;
 -(void) redrawTextureViewports;
--(void) registerTexturesWithViewports;
+-(void) registerTexturesWithViewports:(BOOL)InRedrawViewports;
 -(void) DragSelectionsBy:(TVec3D*)InOffset;
 -(TVec3D*) getUsableOrigin;
 -(void) rotateSelectionsByX:(float)InPitch Y:(float)InYaw Z:(float)InRoll;
@@ -155,13 +162,15 @@
 -(void) csgMergeConvexHull;
 -(TBrush*) createConvexHull:(NSMutableArray*)InBrushes useBrushPlanesFirst:(BOOL)InUseBrushPlanesFirst;
 -(void) csgMergeBoundingBox;
--(void) csgTestBreakDown;
 -(void) csgSubtractFromWorld;
 -(void) subtractBrush:(TBrush*)InCarver FromBrush:(TBrush*)InBrush Entity:(TEntity*)InEntity;
 -(void) csgClipAgainstWorld;
 -(void) csgBevel;
 -(void) csgExtrude;
 -(void) csgSplit;
+-(void) csgTriangulateFan;
+-(void) csgTriangulateFromCenter;
+-(void) csgOptimize;
 -(void) csgHollowSelected;
 -(void) csgClipSelectedBrushesAgainstPlane:(TPlane*)InPlane flippedPlane:(TPlane*)InFlippedPlane split:(BOOL)InSplit;
 -(TEntity*) findBestSelectedBrushBasedEntity;
@@ -178,5 +187,9 @@
 -(void) jumpToBookmark:(NSString*)InKey;
 -(void) quantizeVerts;
 -(void) mirrorSelectedX:(BOOL)InX Y:(BOOL)InY Z:(BOOL)InZ;
+-(void) markAllTexturesDirtyRenderArray;
+-(void) hideSelected;
+-(void) isolateSelected;
+-(void) showAll;
 
 @end

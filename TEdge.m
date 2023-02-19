@@ -9,6 +9,7 @@
 	verts[0] = InVert0;
 	verts[1] = InVert1;
 	pickName = nil;
+	normal = nil;
 	
 	return self;
 }

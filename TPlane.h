@@ -17,6 +17,10 @@
 	NSString* textureName;
 	int uoffset, voffset, rotation;
 	float uscale, vscale;
+	
+	// Temp variables used when breaking down concave meshes
+	float vertexRatio;
+	int facesCut;
 }
 
 -(id)initFromTriangleA:(TVec3D*)InA B:(TVec3D*)InB C:(TVec3D*)InC;
